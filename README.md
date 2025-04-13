@@ -1,0 +1,1 @@
+# letsgo: the Go installer
