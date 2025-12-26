@@ -1,0 +1,64 @@
+# .github/workflows/version-check.yml
+#
+# GitHub Actions workflow for Version Alignment verification.
+#
+# This workflow ensures that the hardcoded version constant within the source
+# code (G_SCRIPT_VERSION) is perfectly synchronized with the latest metadata 
+# from the Git repository (tags or short hashes).
+#
+# This check acts as a release gate to prevent deploying scripts with 
+# inconsistent or outdated version information.
+#
+name: Version Alignment Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  check-version-alignment:
+    name: Check Version Alignment
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 is required to retrieve the full history,
+          # allowing 'git describe' to identify the latest tags.
+          fetch-depth: 0
+
+      - name: Extract Hardcoded Script Version
+        id: get_script_version
+        run: |
+          # Parse the version constant from the installer script.
+          _script_version=$(grep "G_SCRIPT_VERSION=" src/letsgolang.sh | cut -d"'" -f2)
+          printf "SCRIPT_VERSION=%s\n" "$_script_version" >> "$GITHUB_OUTPUT"
+
+      - name: Extract Dynamic Git Version
+        id: get_git_version
+        run: |
+          # Calculate the current version based on Git tags and commit state.
+          # Strip the 'v' prefix if it exists to match the script's format.
+          _git_version=$(git describe --tags --always | sed 's/^v//')
+          printf "GIT_VERSION=%s\n" "$_git_version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Metadata Synchronization
+        run: |
+          _git_v="${{ steps.get_git_version.outputs.GIT_VERSION }}"
+          _script_v="${{ steps.get_script_version.outputs.SCRIPT_VERSION }}"
+
+          printf "Environment Check:\n"
+          printf "  - Git Version:    %s\n" "$_git_v"
+          printf "  - Script Version: %s\n" "$_script_v"
+
+          if [ "$_git_v" != "$_script_v" ]; then
+            printf "\n[ERROR] Version mismatch detected!\n" >&2
+            printf "The source code version is out of sync with the repository state.\n" >&2
+            printf "Resolution: Execute 'make bump-version' locally and commit the result.\n" >&2
+            exit 1
+          fi
+
+          printf "\n[SUCCESS] Versions are perfectly aligned. ✨\n"
