@@ -1,0 +1,91 @@
+# .github/workflows/shell-quality.yml
+#
+# GitHub Actions workflow for Shell Script Quality Assurance.
+#
+# This workflow performs static analysis (ShellCheck) and formatting checks (shfmt)
+# on all shell scripts in the repository to ensure POSIX compliance and
+# maintainability.
+#
+name: Shell Script Quality Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint-and-format:
+    name: Lint and Format
+    runs-on: ubuntu-latest
+    container: alpine/git:latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Cache ShellCheck and shfmt
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/shellcheck
+            ~/.cache/shfmt
+          key: ${{ runner.os }}-shellcheck-shfmt-${{ hashFiles('**/*.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-shellcheck-shfmt-
+
+      - name: Install Dependencies (ShellCheck, curl)
+        run: |
+          apk add --no-cache shellcheck curl
+
+      - name: Download and Validate shfmt
+        env:
+          # Target version for shfmt
+          SHFMT_VERSION: v3.8.0
+        run: |
+          printf "Downloading shfmt %s...\n" "${SHFMT_VERSION}"
+          curl -sL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
+          curl -sL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/sha256sums.txt" -o /tmp/sha256sums.txt
+
+          printf "Verifying shfmt checksum...\n"
+          grep "shfmt_${SHFMT_VERSION}_linux_amd64" /tmp/sha256sums.txt | (cd /usr/local/bin && sha256sum -c - --ignore-missing)
+
+          chmod +x /usr/local/bin/shfmt
+          printf "shfmt installed and validated successfully.\n"
+
+      - name: Run ShellCheck and shfmt
+        run: |
+          # Robustly find all shell scripts with valid shebangs in relevant directories.
+          # We use null terminators (-print0, -z) to handle special characters in filenames.
+          _temp_list=$(mktemp)
+          find ./src ./scripts ./test -type f -executable -print0 | \
+            xargs -0 grep -lZE '^(#!/(bin/(ba)?sh|usr/bin/(env )?sh|usr/bin/env (ba)?sh))' > "$_temp_list" || true
+
+          if [ ! -s "$_temp_list" ]; then
+            printf "No shell scripts found. Skipping checks.\n"
+            exit 0
+          fi
+
+          printf "Shell scripts identified for analysis:\n"
+          tr '\0' '\n' < "$_temp_list"
+
+          # 1. Run ShellCheck
+          printf "\n--- Running ShellCheck ---\n"
+          xargs -0 shellcheck -f gcc < "$_temp_list" || {
+            printf "Error: ShellCheck identified issues in the scripts.\n"
+            exit 1
+          }
+
+          # 2. Check Formatting with shfmt
+          # -d: Display diffs
+          # -i 2: Indent with 2 spaces
+          # -ci: Indent switch cases
+          # -bn: Binary operators at start of line
+          printf "\n--- Verifying Code Formatting (shfmt) ---\n"
+          xargs -0 shfmt -d -i 2 -ci -bn < "$_temp_list" || {
+            printf "Error: Formatting inconsistencies found. Run 'shfmt -w -i 2 -ci -bn .' locally to fix.\n"
+            exit 1
+          }
+
+          printf "\nSuccess: All shell scripts passed quality and formatting checks.\n"
+          rm "$_temp_list"
