@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Maintain GitHub Actions dependencies up-to-date.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    # Optional: define reviewers for generated PRs.
+    # reviewers:
+    #   - "jcsxdev"
+    groups:
+      # Group all action updates into a single PR to minimize noise.
+      actions-updates:
+        patterns:
+          - "*"
