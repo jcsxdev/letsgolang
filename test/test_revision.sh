@@ -100,8 +100,8 @@ test_revision_handles_empty_initial_values() {
   local _expected="2.0.0"
 
   # Create a file with empty and unquoted values.
-  printf "readonly G_SCRIPT_VERSION=\nreadonly G_SCRIPT_COMMIT=\nreadonly G_SCRIPT_DATE=\n" > "$_target"
-  
+  printf "readonly G_SCRIPT_VERSION=\nreadonly G_SCRIPT_COMMIT=\nreadonly G_SCRIPT_DATE=\n" >"$_target"
+
   # Set Git state.
   git tag "v$_expected"
 

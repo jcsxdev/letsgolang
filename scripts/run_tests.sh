@@ -145,25 +145,25 @@ main() {
   # Argument parsing
   while [ $# -gt 0 ]; do
     case "$1" in
-    -h | --help)
-      display_help
-      return 0
-      ;;
-    -f | --file)
-      G_FILE_FILTER="$2"
-      shift
-      ;;
-    -k | --filter)
-      G_FILTER="$2"
-      shift
-      ;;
-    --no-color)
-      export NO_COLOR=true
-      ;;
-    *)
-      printf "Error: Unknown option: %s\n" "$1" >&2
-      return 1
-      ;;
+      -h | --help)
+        display_help
+        return 0
+        ;;
+      -f | --file)
+        G_FILE_FILTER="$2"
+        shift
+        ;;
+      -k | --filter)
+        G_FILTER="$2"
+        shift
+        ;;
+      --no-color)
+        export NO_COLOR=true
+        ;;
+      *)
+        printf "Error: Unknown option: %s\n" "$1" >&2
+        return 1
+        ;;
     esac
     shift
   done

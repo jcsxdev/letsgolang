@@ -131,43 +131,43 @@ process_main_routine() {
 
   for _execution_step in $_steps_list; do
     case $_execution_step in
-    STEP1)
-      _step_count=$((_step_count + 1))
-      process_step1 || return 1
-      ;;
-    STEP2)
-      _step_count=$((_step_count + 1))
-      process_step2
-      local _step2_status=$?
-      if [ $_step2_status -eq 99 ]; then
-        [ -d "$_temp_dir" ] && rm -r "$_temp_dir"
-        return 0
-      elif [ $_step2_status -ne 0 ]; then
-        return 1
-      fi
-      ;;
-    STEP3)
-      _step_count=$((_step_count + 1))
-      process_step3 --temp-dir "$_temp_dir" || return 1
-      ;;
-    STEP4)
-      _step_count=$((_step_count + 1))
-      process_step4 || return 1
-      ;;
-    STEP5)
-      _step_count=$((_step_count + 1))
-      process_step5 --temp-dir "$_temp_dir" || return 1
-      ;;
-    STEP6)
-      _step_count=$((_step_count + 1))
-      process_step6 --temp-dir "$_temp_dir" || return 1
-      ;;
-    *)
-      log_error "$_funcname" \
-        "Internal: invalid execution step name: '$_execution_step'."
+      STEP1)
+        _step_count=$((_step_count + 1))
+        process_step1 || return 1
+        ;;
+      STEP2)
+        _step_count=$((_step_count + 1))
+        process_step2
+        local _step2_status=$?
+        if [ $_step2_status -eq 99 ]; then
+          [ -d "$_temp_dir" ] && rm -r "$_temp_dir"
+          return 0
+        elif [ $_step2_status -ne 0 ]; then
+          return 1
+        fi
+        ;;
+      STEP3)
+        _step_count=$((_step_count + 1))
+        process_step3 --temp-dir "$_temp_dir" || return 1
+        ;;
+      STEP4)
+        _step_count=$((_step_count + 1))
+        process_step4 || return 1
+        ;;
+      STEP5)
+        _step_count=$((_step_count + 1))
+        process_step5 --temp-dir "$_temp_dir" || return 1
+        ;;
+      STEP6)
+        _step_count=$((_step_count + 1))
+        process_step6 --temp-dir "$_temp_dir" || return 1
+        ;;
+      *)
+        log_error "$_funcname" \
+          "Internal: invalid execution step name: '$_execution_step'."
 
-      return 1
-      ;;
+        return 1
+        ;;
     esac
   done
 
@@ -189,12 +189,12 @@ process_main_routine() {
 # Returns: 0 if 386, 1 otherwise.
 is_386_architecture() {
   case "$(get_machine_architecture)" in
-  i386 | i486 | i586 | i686)
-    # Nothing to do here
-    ;;
-  *)
-    return 1
-    ;;
+    i386 | i486 | i586 | i686)
+      # Nothing to do here
+      ;;
+    *)
+      return 1
+      ;;
   esac
 
   return 0
@@ -204,12 +204,12 @@ is_386_architecture() {
 # Returns: 0 if amd64, 1 otherwise.
 is_amd64_architecture() {
   case "$(get_machine_architecture)" in
-  x86_64)
-    # Nothing to do here
-    ;;
-  *)
-    return 1
-    ;;
+    x86_64)
+      # Nothing to do here
+      ;;
+    *)
+      return 1
+      ;;
   esac
 
   return 0
@@ -229,8 +229,8 @@ is_go_command_found() {
 # Respects the NO_COLOR standard (https://no-color.org/).
 # Returns: 0 if no-color is active, 1 otherwise.
 is_no_color() {
-  if [ -n "${NO_COLOR:-}" ] &&
-    [ "${NO_COLOR:-}" = true ] || [ "${NO_COLOR:-}" = '1' ]; then
+  if [ -n "${NO_COLOR:-}" ] \
+    && [ "${NO_COLOR:-}" = true ] || [ "${NO_COLOR:-}" = '1' ]; then
     return 0
   fi
 
@@ -399,15 +399,15 @@ process_step3() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-    --temp-dir)
-      _temp_dir=$2
-      shift
-      ;;
-    *)
-      log_error "$_funcname" \
-        "Invalid option ('$1'): usage: $_usage."
-      return 1
-      ;;
+      --temp-dir)
+        _temp_dir=$2
+        shift
+        ;;
+      *)
+        log_error "$_funcname" \
+          "Invalid option ('$1'): usage: $_usage."
+        return 1
+        ;;
     esac
     shift
   done
@@ -545,9 +545,9 @@ process_step4() {
     [ $_hash_function = 'SHA-512' ] && _subcommand='sha512'
 
     if _status_message=$(get_checksum "$_subcommand" --file ./"$g_installation_filename" 2>&1); then
-      [ $_hash_function = 'SHA-256' ] &&
-        _sha256sum=$_status_message ||
-        _sha512sum=$_status_message
+      [ $_hash_function = 'SHA-256' ] \
+        && _sha256sum=$_status_message \
+        || _sha512sum=$_status_message
     else
       if [ -n "$_status_message" ]; then
         log_error "$_funcname" "$_status_message"
@@ -600,9 +600,9 @@ EOF
     [ $_hash_function = 'SHA-512' ] && _target_checksum="$_sha512sum"
 
     if run_curl --silent "${_download_server_url}/" | grep --quiet "$_target_checksum"; then
-      [ $_hash_function = 'SHA-256' ] &&
-        _is_sha256sum_found=true ||
-        _is_sha512sum_found=true
+      [ $_hash_function = 'SHA-256' ] \
+        && _is_sha256sum_found=true \
+        || _is_sha512sum_found=true
     fi
   done
 
@@ -615,58 +615,58 @@ EOF
   _state=$(printf "0x%02x" "$_state")
 
   case "$_state" in
-  0x00)
-    log_error "$_funcname" \
-      "No checksum found."
+    0x00)
+      log_error "$_funcname" \
+        "No checksum found."
 
-    return 1
-    ;;
-  0x01 | 0x10 | 0x011)
-    local _checksum_list=
-    local _checksum_list_len=
-    local _auxiliary_message='checksum'
-    local _previous_set=
+      return 1
+      ;;
+    0x01 | 0x10 | 0x011)
+      local _checksum_list=
+      local _checksum_list_len=
+      local _auxiliary_message='checksum'
+      local _previous_set=
 
-    [ "$_state" = '0x01' ] && _checksum_list='SHA-256'
-    [ "$_state" = '0x10' ] && _checksum_list='SHA-512'
-    [ "$_state" = '0x11' ] && _checksum_list='SHA-256 SHA-512'
+      [ "$_state" = '0x01' ] && _checksum_list='SHA-256'
+      [ "$_state" = '0x10' ] && _checksum_list='SHA-512'
+      [ "$_state" = '0x11' ] && _checksum_list='SHA-256 SHA-512'
 
-    [ $# -ge 1 ] && _previous_set="$*"
+      [ $# -ge 1 ] && _previous_set="$*"
 
-    # shellcheck disable=SC2086 # Double quote to prevent globbing and word splitting.
-    set -- $_checksum_list
+      # shellcheck disable=SC2086 # Double quote to prevent globbing and word splitting.
+      set -- $_checksum_list
 
-    _checksum_list_len="$#"
-    [ "$_checksum_list_len" -ge 2 ] && _auxiliary_message='checksums'
+      _checksum_list_len="$#"
+      [ "$_checksum_list_len" -ge 2 ] && _auxiliary_message='checksums'
 
-    # shellcheck disable=SC2086 # Double quote to prevent globbing and word splitting.
-    [ -n "$_previous_set" ] && set -- $_previous_set
+      # shellcheck disable=SC2086 # Double quote to prevent globbing and word splitting.
+      [ -n "$_previous_set" ] && set -- $_previous_set
 
-    log_info "$_funcname" \
-      "$_checksum_list_len $_auxiliary_message found:"
+      log_info "$_funcname" \
+        "$_checksum_list_len $_auxiliary_message found:"
 
-    for _hash_function in $_checksum_list; do
-      case "$_hash_function" in
-      SHA-256)
-        _status_message="SHA256SUM: $_sha256sum"
-        ;;
-      SHA-512)
-        _status_message="SHA512SUM: $_sha512sum"
-        ;;
-      *)
-        return 1
-        ;;
-      esac
+      for _hash_function in $_checksum_list; do
+        case "$_hash_function" in
+          SHA-256)
+            _status_message="SHA256SUM: $_sha256sum"
+            ;;
+          SHA-512)
+            _status_message="SHA512SUM: $_sha512sum"
+            ;;
+          *)
+            return 1
+            ;;
+        esac
 
-      printf '%s\n' "  - $_status_message"
-    done
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Unexpected state: '$_state'."
+        printf '%s\n' "  - $_status_message"
+      done
+      ;;
+    *)
+      log_error "$_funcname" \
+        "Unexpected state: '$_state'."
 
-    return 1
-    ;;
+      return 1
+      ;;
   esac
 }
 
@@ -688,15 +688,15 @@ process_step5() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-    --temp-dir)
-      _temp_dir=$2
-      shift
-      ;;
-    *)
-      log_error "$_funcname" \
-        "Invalid option ('$1'): usage: $_usage."
-      return 1
-      ;;
+      --temp-dir)
+        _temp_dir=$2
+        shift
+        ;;
+      *)
+        log_error "$_funcname" \
+          "Invalid option ('$1'): usage: $_usage."
+        return 1
+        ;;
     esac
     shift
   done
@@ -811,42 +811,42 @@ process_step6() {
   # Parsing options
   while [ $# -gt 0 ]; do
     case "$1" in
-    --temp-dir)
-      _temp_dir=$2
-      shift
-      ;;
-    *)
-      log_error "$_funcname" \
-        "Invalid option ('$1'): usage: $_usage."
-      return 1
-      ;;
+      --temp-dir)
+        _temp_dir=$2
+        shift
+        ;;
+      *)
+        log_error "$_funcname" \
+          "Invalid option ('$1'): usage: $_usage."
+        return 1
+        ;;
     esac
     shift
   done
 
   # Detect user's shell and choose the appropriate profile file
   case "$SHELL" in
-  */bash)
-    if [ -f "$HOME/.bash_profile" ]; then
-      _profile_file="$HOME/.bash_profile"
-    else
-      _profile_file="$HOME/.bashrc"
-    fi
-    ;;
-  */zsh)
-    _profile_file="$HOME/.zshrc"
-    ;;
-  */fish)
-    _profile_file="$HOME/.config/fish/config.fish"
-    [ -d "$HOME/.config/fish" ] || mkdir -p "$HOME/.config/fish"
-    ;;
-  */nushell)
-    _profile_file="$HOME/.config/nushell/config.toml"
-    [ -d "$HOME/.config/nushell" ] || mkdir -p "$HOME/.config/nushell"
-    ;;
-  *)
-    _profile_file="$HOME/.profile" # Fallback
-    ;;
+    */bash)
+      if [ -f "$HOME/.bash_profile" ]; then
+        _profile_file="$HOME/.bash_profile"
+      else
+        _profile_file="$HOME/.bashrc"
+      fi
+      ;;
+    */zsh)
+      _profile_file="$HOME/.zshrc"
+      ;;
+    */fish)
+      _profile_file="$HOME/.config/fish/config.fish"
+      [ -d "$HOME/.config/fish" ] || mkdir -p "$HOME/.config/fish"
+      ;;
+    */nushell)
+      _profile_file="$HOME/.config/nushell/config.toml"
+      [ -d "$HOME/.config/nushell" ] || mkdir -p "$HOME/.config/nushell"
+      ;;
+    *)
+      _profile_file="$HOME/.profile" # Fallback
+      ;;
   esac
 
   log_info "$_funcname" \
@@ -888,22 +888,22 @@ process_step6() {
   local _normalized_gobin_path=
 
   case "$SHELL" in
-  */bash | */zsh)
-    _normalized_goroot_path=$(printf "%s" "$_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    _normalized_gobin_path=$(printf "%s" "$_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    ;;
-  */fish)
-    _normalized_goroot_path=$(printf "%s" "$_fish_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    _normalized_gobin_path=$(printf "%s" "$_fish_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    ;;
-  */nushell)
-    _normalized_goroot_path=$(printf "%s" "$_nushell_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    _normalized_gobin_path=$(printf "%s" "$_nushell_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    ;;
-  *)
-    _normalized_goroot_path=$(printf "%s" "$_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    _normalized_gobin_path=$(printf "%s" "$_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
-    ;;
+    */bash | */zsh)
+      _normalized_goroot_path=$(printf "%s" "$_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      _normalized_gobin_path=$(printf "%s" "$_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      ;;
+    */fish)
+      _normalized_goroot_path=$(printf "%s" "$_fish_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      _normalized_gobin_path=$(printf "%s" "$_fish_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      ;;
+    */nushell)
+      _normalized_goroot_path=$(printf "%s" "$_nushell_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      _normalized_gobin_path=$(printf "%s" "$_nushell_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      ;;
+    *)
+      _normalized_goroot_path=$(printf "%s" "$_export_go_root_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      _normalized_gobin_path=$(printf "%s" "$_export_go_bin_path" | sed 's/[[:space:]]\+/ /g; s/#.*//')
+      ;;
   esac
 
   # Check if the variables already exist in the profile file
@@ -936,15 +936,15 @@ process_step6() {
 
   # Output command to reload the profile file
   case "${SHELL##*/}" in
-  fish)
-    log_info "$_funcname" "Run: source ~/.config/fish/config.fish"
-    ;;
-  nushell)
-    log_info "$_funcname" "Restart Nushell or run: source ~/.config/nushell/config.nu"
-    ;;
-  *)
-    log_info "$_funcname" "Run: source $_profile_file"
-    ;;
+    fish)
+      log_info "$_funcname" "Run: source ~/.config/fish/config.fish"
+      ;;
+    nushell)
+      log_info "$_funcname" "Restart Nushell or run: source ~/.config/nushell/config.nu"
+      ;;
+    *)
+      log_info "$_funcname" "Run: source $_profile_file"
+      ;;
   esac
 }
 
@@ -971,22 +971,22 @@ get_base_url() {
   fi
 
   case "$_option" in
-  --url)
-    if [ -z "$_target_url" ]; then
+    --url)
+      if [ -z "$_target_url" ]; then
+        log_error "$_funcname" \
+          "Internal: invalid URL: '$_target_url'."
+
+        return 1
+      fi
+
+      printf '%s' "$_target_url" | sed 's|\(https\?://[^/]*\).*|\1|'
+      ;;
+    *)
       log_error "$_funcname" \
-        "Internal: invalid URL: '$_target_url'."
+        "Internal: invalid option ('$_option'): usage: $_usage."
 
       return 1
-    fi
-
-    printf '%s' "$_target_url" | sed 's|\(https\?://[^/]*\).*|\1|'
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Internal: invalid option ('$_option'): usage: $_usage."
-
-    return 1
-    ;;
+      ;;
   esac
 
   return 0
@@ -1014,31 +1014,31 @@ get_checksum() {
   fi
 
   case "$_1st_param" in
-  --file)
-    _target_file="$_2nd_param"
-    ;;
-  sha256 | sha512)
-    [ "$_1st_param" = "sha512" ] && _hash_algorithm='SHA-512'
+    --file)
+      _target_file="$_2nd_param"
+      ;;
+    sha256 | sha512)
+      [ "$_1st_param" = "sha512" ] && _hash_algorithm='SHA-512'
 
-    if [ "$_2nd_param" != '--file' ]; then
+      if [ "$_2nd_param" != '--file' ]; then
+        log_error "$_funcname" \
+          "Invalid option ('$_2nd_param'): usage: $_usage."
+        return 1
+      fi
+
+      if [ ! -f "$_3nd_param" ]; then
+        log_error "$_funcname" \
+          "Is not a file: '$_3nd_param'."
+        return 1
+      fi
+
+      _target_file="$_3nd_param"
+      ;;
+    *)
       log_error "$_funcname" \
-        "Invalid option ('$_2nd_param'): usage: $_usage."
+        "Invalid first parameter ('$_1st_param'): usage: $_usage."
       return 1
-    fi
-
-    if [ ! -f "$_3nd_param" ]; then
-      log_error "$_funcname" \
-        "Is not a file: '$_3nd_param'."
-      return 1
-    fi
-
-    _target_file="$_3nd_param"
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Invalid first parameter ('$_1st_param'): usage: $_usage."
-    return 1
-    ;;
+      ;;
   esac
 
   if [ -z "$_target_file" ] || [ ! -f "$_target_file" ]; then
@@ -1048,23 +1048,23 @@ get_checksum() {
   fi
 
   case "$_hash_algorithm" in
-  SHA-256)
-    if ! sha256sum "$_target_file" | awk '{ print $1 }'; then
-      log_error "$_funcname" "Failed to get SHA256SUM."
+    SHA-256)
+      if ! sha256sum "$_target_file" | awk '{ print $1 }'; then
+        log_error "$_funcname" "Failed to get SHA256SUM."
+        return 1
+      fi
+      ;;
+    SHA-512)
+      if ! sha512sum "$_target_file" | awk '{ print $1 }'; then
+        log_error "$_funcname" "Failed to get SHA512SUM."
+        return 1
+      fi
+      ;;
+    *)
+      log_error "$_funcname" \
+        "Internal: invalid hash algorithm option: '$_hash_algorithm'."
       return 1
-    fi
-    ;;
-  SHA-512)
-    if ! sha512sum "$_target_file" | awk '{ print $1 }'; then
-      log_error "$_funcname" "Failed to get SHA512SUM."
-      return 1
-    fi
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Internal: invalid hash algorithm option: '$_hash_algorithm'."
-    return 1
-    ;;
+      ;;
   esac
 
   return 0
@@ -1092,18 +1092,18 @@ get_connection_status() {
   fi
 
   case "$_option" in
-  --target-url)
-    if [ -z "$_target_url" ]; then
+    --target-url)
+      if [ -z "$_target_url" ]; then
+        log_error "$_funcname" \
+          "Internal: no URL set: usage: $_usage."
+        return 1
+      fi
+      ;;
+    *)
       log_error "$_funcname" \
-        "Internal: no URL set: usage: $_usage."
+        "Internal: invalid option ('$_option'): usage: $_usage."
       return 1
-    fi
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Internal: invalid option ('$_option'): usage: $_usage."
-    return 1
-    ;;
+      ;;
   esac
 
   _status_message=
@@ -1134,88 +1134,88 @@ get_connection_status() {
   fi
 
   case $_status_code in
-  000)
-    local _total_lines_number=
-    local _error_message=
+    000)
+      local _total_lines_number=
+      local _error_message=
 
-    _status_message=
+      _status_message=
 
-    if _status_message=$(get_total_lines_num --file "$_io_tempfile" 2>&1); then
-      _total_lines_number="$_status_message"
-    else
-      if [ -n "$_status_message" ]; then
-        printf '%b\n' "$_status_message"
+      if _status_message=$(get_total_lines_num --file "$_io_tempfile" 2>&1); then
+        _total_lines_number="$_status_message"
       else
-        log_error "$_funcname" "Internal: failed to get total of lines number."
+        if [ -n "$_status_message" ]; then
+          printf '%b\n' "$_status_message"
+        else
+          log_error "$_funcname" "Internal: failed to get total of lines number."
+        fi
+
+        return 1
+      fi
+
+      if [ "$_total_lines_number" -gt 1 ]; then
+        log_error "$_funcname" "curl (exit: $_curl_exit_status): $_response_result"
+      else
+        log_error "$_funcname" \
+          "curl (exit: $_curl_exit_status): unable to establish connection (status code: ${_status_code})."
+        log_warn "$_funcname" "Check your Internet connection."
       fi
 
       return 1
-    fi
-
-    if [ "$_total_lines_number" -gt 1 ]; then
-      log_error "$_funcname" "curl (exit: $_curl_exit_status): $_response_result"
-    else
+      ;;
+    # HTTP response status codes between 100 to 199.
+    1[0-9][0-9])
+      log_warn "$_funcname" \
+        "Informational response: $_response_result"
+      return 1
+      ;;
+    # HTTP response status codes between 200 to 299.
+    2[0-9][0-9])
+      # Nothing to do.
+      ;;
+    # HTTP response status codes between 300 to 399.
+    3[0-9][0-9])
+      # Nothing to do.
+      ;;
+    # HTTP response status codes between 400 to 499.
+    4[0-9][0-9])
       log_error "$_funcname" \
-        "curl (exit: $_curl_exit_status): unable to establish connection (status code: ${_status_code})."
-      log_warn "$_funcname" "Check your Internet connection."
-    fi
+        "Client error response: $_response_result"
+      return 1
+      ;;
+    # HTTP response status codes between 500 to 599.
+    5[0-9][0-9])
+      log_error "$_funcname" \
+        "Server error response: $_response_result"
+      return 1
+      ;;
+    *)
+      local _total_lines_number=
+      local _error_message=
 
-    return 1
-    ;;
-  # HTTP response status codes between 100 to 199.
-  1[0-9][0-9])
-    log_warn "$_funcname" \
-      "Informational response: $_response_result"
-    return 1
-    ;;
-  # HTTP response status codes between 200 to 299.
-  2[0-9][0-9])
-    # Nothing to do.
-    ;;
-  # HTTP response status codes between 300 to 399.
-  3[0-9][0-9])
-    # Nothing to do.
-    ;;
-  # HTTP response status codes between 400 to 499.
-  4[0-9][0-9])
-    log_error "$_funcname" \
-      "Client error response: $_response_result"
-    return 1
-    ;;
-  # HTTP response status codes between 500 to 599.
-  5[0-9][0-9])
-    log_error "$_funcname" \
-      "Server error response: $_response_result"
-    return 1
-    ;;
-  *)
-    local _total_lines_number=
-    local _error_message=
+      _status_message=
 
-    _status_message=
-
-    if _status_message=$(get_total_lines_num --file "$_io_tempfile" 2>&1); then
-      _total_lines_number="$_status_message"
-    else
-      if [ -n "$_status_message" ]; then
-        printf '%s\n' "$_status_message"
+      if _status_message=$(get_total_lines_num --file "$_io_tempfile" 2>&1); then
+        _total_lines_number="$_status_message"
       else
-        log_error "$_funcname" "Internal: failed to get total of lines number."
+        if [ -n "$_status_message" ]; then
+          printf '%s\n' "$_status_message"
+        else
+          log_error "$_funcname" "Internal: failed to get total of lines number."
+        fi
+
+        return 1
       fi
 
+      if [ "$_total_lines_number" -gt 1 ]; then
+        _error_message="unknown connection response: $_response_result"
+      else
+        _error_message="unknown connection response (status code: $_status_code)"
+      fi
+
+      log_error "$_funcname" "curl (exit: $_curl_exit_status): ${_error_message}."
+
       return 1
-    fi
-
-    if [ "$_total_lines_number" -gt 1 ]; then
-      _error_message="unknown connection response: $_response_result"
-    else
-      _error_message="unknown connection response (status code: $_status_code)"
-    fi
-
-    log_error "$_funcname" "curl (exit: $_curl_exit_status): ${_error_message}."
-
-    return 1
-    ;;
+      ;;
 
   esac
 
@@ -1240,19 +1240,19 @@ get_diff_between_versions() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-    --v1)
-      _version1=$2
-      shift
-      ;;
-    --v2)
-      _version2=$2
-      shift
-      ;;
-    *)
-      log_error "$_funcname" \
-        "Invalid option ('$1'): usage: $_usage."
-      return 1
-      ;;
+      --v1)
+        _version1=$2
+        shift
+        ;;
+      --v2)
+        _version2=$2
+        shift
+        ;;
+      *)
+        log_error "$_funcname" \
+          "Invalid option ('$1'): usage: $_usage."
+        return 1
+        ;;
     esac
     shift
   done
@@ -1339,41 +1339,41 @@ get_execution_step() {
   _option="$1"
 
   case "$_option" in
-  --list)
-    printf '%s' "$_steps_list"
-    ;;
-  --step[0-9]-name)
-    local _error_message="Invalid step number"
-    local _step_num=
+    --list)
+      printf '%s' "$_steps_list"
+      ;;
+    --step[0-9]-name)
+      local _error_message="Invalid step number"
+      local _step_num=
 
-    _step_num="$_option"
-    _step_num="${_step_num#--step}" # Remove "--step"
-    _step_num="${_step_num%%-name}" # Remove "-name"
+      _step_num="$_option"
+      _step_num="${_step_num#--step}" # Remove "--step"
+      _step_num="${_step_num%%-name}" # Remove "-name"
 
-    if [ -z "$_step_num" ]; then
-      _error_message="${_error_message}: empty value"
-      log_error "$_funcname" "${_error_message}."
-      return 1
-    elif ! echo "$_step_num" | grep -q '^[0-9]*$'; then
-      _error_message="$_error_message ($_step_num): is not an integer"
-      log_error "$_funcname" "${_error_message}."
-      return 1
-    elif [ "$_step_num" -le 0 ] 2>/dev/null; then
-      _error_message="${_error_message}: negative number"
-      log_error "$_funcname" "${_error_message}."
-      return 1
-    fi
+      if [ -z "$_step_num" ]; then
+        _error_message="${_error_message}: empty value"
+        log_error "$_funcname" "${_error_message}."
+        return 1
+      elif ! echo "$_step_num" | grep -q '^[0-9]*$'; then
+        _error_message="$_error_message ($_step_num): is not an integer"
+        log_error "$_funcname" "${_error_message}."
+        return 1
+      elif [ "$_step_num" -le 0 ] 2>/dev/null; then
+        _error_message="${_error_message}: negative number"
+        log_error "$_funcname" "${_error_message}."
+        return 1
+      fi
 
-    printf '%s\n' "$_steps_list" | cut -d' ' -f"$_step_num"
-    ;;
-  --list-length)
-    printf '%d' "$_steps_list_len"
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Invalid option ('$_option'): usage: '$_usage'."
-    return 1
-    ;;
+      printf '%s\n' "$_steps_list" | cut -d' ' -f"$_step_num"
+      ;;
+    --list-length)
+      printf '%d' "$_steps_list_len"
+      ;;
+    *)
+      log_error "$_funcname" \
+        "Invalid option ('$_option'): usage: '$_usage'."
+      return 1
+      ;;
   esac
 
   return 0
@@ -1419,54 +1419,54 @@ get_file_permission() {
 get_main_opts() {
   for arg in "$@"; do
     case "$arg" in
-    --help)
-      usage
-      exit 0
-      ;;
-    --quiet)
-      g_quiet_mode=yes
-      ;;
-    --verbose)
-      g_verbose_mode=yes
-      ;;
-    --version)
-      get_script_version
-      exit 0
-      ;;
-    *)
-      OPTIND=1
-      if [ "${arg%%--*}" = "" ]; then
-        # Long option (other than --help);
-        # don't attempt to interpret it.
-        continue
-      fi
-      while getopts :Vhqvy sub_arg "$arg"; do
-        case "$sub_arg" in
-        V)
-          get_script_version
-          exit 0
-          ;;
-        h)
-          usage
-          exit 0
-          ;;
-        q)
-          # TODO: Implement quiet mode logic (currently unused)
-          # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
-          g_quiet_mode=yes
-          ;;
-        v)
-          g_verbose_mode=yes
-          ;;
-        y)
-          # TODO: Implement non-interactive mode logic (currently unused)
-          # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
-          g_need_tty=no
-          ;;
-        *) ;;
-        esac
-      done
-      ;;
+      --help)
+        usage
+        exit 0
+        ;;
+      --quiet)
+        g_quiet_mode=yes
+        ;;
+      --verbose)
+        g_verbose_mode=yes
+        ;;
+      --version)
+        get_script_version
+        exit 0
+        ;;
+      *)
+        OPTIND=1
+        if [ "${arg%%--*}" = "" ]; then
+          # Long option (other than --help);
+          # don't attempt to interpret it.
+          continue
+        fi
+        while getopts :Vhqvy sub_arg "$arg"; do
+          case "$sub_arg" in
+            V)
+              get_script_version
+              exit 0
+              ;;
+            h)
+              usage
+              exit 0
+              ;;
+            q)
+              # TODO: Implement quiet mode logic (currently unused)
+              # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
+              g_quiet_mode=yes
+              ;;
+            v)
+              g_verbose_mode=yes
+              ;;
+            y)
+              # TODO: Implement non-interactive mode logic (currently unused)
+              # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
+              g_need_tty=no
+              ;;
+            *) ;;
+          esac
+        done
+        ;;
     esac
   done
 }
@@ -1492,18 +1492,18 @@ get_version_to_num_conversion() {
   fi
 
   case "$_option" in
-  --version)
-    if [ -z "$_version" ]; then
+    --version)
+      if [ -z "$_version" ]; then
+        log_error "$_funcname" \
+          "Internal: no version set: usage: $_usage."
+        return 1
+      fi
+      ;;
+    *)
       log_error "$_funcname" \
-        "Internal: no version set: usage: $_usage."
+        "Internal: invalid option ('$_option'): usage: $_usage."
       return 1
-    fi
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Internal: invalid option ('$_option'): usage: $_usage."
-    return 1
-    ;;
+      ;;
   esac
 
   _major=$(printf '%s\n' "$_version" | cut -d. -f1)
@@ -1749,101 +1749,101 @@ get_temporary_asset() {
   fi
 
   case "$_option" in
-  --basename)
-    printf '%s\n' "$_asset_basename"
-    ;;
-  --directory | --file)
-    local _asset_type='directory'
-    [ "$_option" = '--file' ] && _asset_type='file'
+    --basename)
+      printf '%s\n' "$_asset_basename"
+      ;;
+    --directory | --file)
+      local _asset_type='directory'
+      [ "$_option" = '--file' ] && _asset_type='file'
 
-    local _asset_path=
-    local _dir_indicator='.d'
-    local _mktemp_exit_status=
+      local _asset_path=
+      local _dir_indicator='.d'
+      local _mktemp_exit_status=
 
-    if ! umask 0077; then
-      log_error "$_funcname" \
-        "Internal: failed to apply 'umask 0077'."
-      return 1
-    fi
-
-    if [ "$_option" = '--directory' ]; then
-      _asset_path=$(mktemp -d "${_temp_dir}/${_asset_name}${_dir_indicator}")
-      _mktemp_exit_status=$?
-    else
-      _asset_path=$(mktemp "${_temp_dir}/${_asset_name}")
-      _mktemp_exit_status=$?
-    fi
-
-    if [ "$_mktemp_exit_status" -ne 0 ]; then
-      log_error "$_funcname" \
-        "mktemp (exit: $_mktemp_exit_status): failed to create temporary ${_asset_type}."
-      return "$_mktemp_exit_status"
-    fi
-
-    if [ -d "$_asset_path" ] || [ -f "$_asset_path" ]; then
-      local _desired_permission=700
-      [ -f "$_asset_path" ] && _desired_permission=600
-
-      local _current_permission=
-      if ! _current_permission=$(get_file_permission "$_asset_path"); then
+      if ! umask 0077; then
         log_error "$_funcname" \
-          "Failed to get current asset permission value."
+          "Internal: failed to apply 'umask 0077'."
         return 1
       fi
 
-      if [ "$_current_permission" -ne "$_desired_permission" ]; then
-        local _chmod_exit_status=
-        chmod $_desired_permission "$_asset_path"
-        _chmod_exit_status=$?
-
-        if [ $_chmod_exit_status -ne 0 ]; then
-          log_error "$_funcname" \
-            "chmod (exit: $_chmod_exit_status): failed to set asset permission to '$_desired_permission'."
-          return "$_chmod_exit_status"
-        fi
+      if [ "$_option" = '--directory' ]; then
+        _asset_path=$(mktemp -d "${_temp_dir}/${_asset_name}${_dir_indicator}")
+        _mktemp_exit_status=$?
+      else
+        _asset_path=$(mktemp "${_temp_dir}/${_asset_name}")
+        _mktemp_exit_status=$?
       fi
 
-      printf '%s\n' "$_asset_path"
-    else
+      if [ "$_mktemp_exit_status" -ne 0 ]; then
+        log_error "$_funcname" \
+          "mktemp (exit: $_mktemp_exit_status): failed to create temporary ${_asset_type}."
+        return "$_mktemp_exit_status"
+      fi
+
+      if [ -d "$_asset_path" ] || [ -f "$_asset_path" ]; then
+        local _desired_permission=700
+        [ -f "$_asset_path" ] && _desired_permission=600
+
+        local _current_permission=
+        if ! _current_permission=$(get_file_permission "$_asset_path"); then
+          log_error "$_funcname" \
+            "Failed to get current asset permission value."
+          return 1
+        fi
+
+        if [ "$_current_permission" -ne "$_desired_permission" ]; then
+          local _chmod_exit_status=
+          chmod $_desired_permission "$_asset_path"
+          _chmod_exit_status=$?
+
+          if [ $_chmod_exit_status -ne 0 ]; then
+            log_error "$_funcname" \
+              "chmod (exit: $_chmod_exit_status): failed to set asset permission to '$_desired_permission'."
+            return "$_chmod_exit_status"
+          fi
+        fi
+
+        printf '%s\n' "$_asset_path"
+      else
+        log_error "$_funcname" \
+          "Failed to create $_asset_type '$_asset_path': is not a ${_asset_type}."
+
+        return 1
+      fi
+      ;;
+    --list)
+      local _find_exit_status=
+
+      find "$_temp_dir" -maxdepth 1 -name "$_asset_basename*" -print0 | sed 's/ /'"$(get_space_char_mask)"'/g' | xargs -0
+      _find_exit_status=$?
+
+      if [ $_find_exit_status -ne 0 ]; then
+        log_error "$_funcname" \
+          "find (exit: $_find_exit_status): failed to find temporary assets."
+        return 1
+      fi
+      ;;
+    --list-length)
+      local _find_exit_status=
+
+      find "$_temp_dir" -maxdepth 1 -name "letsgo.*" | wc -l
+      _find_exit_status=$?
+
+      if [ $_find_exit_status -ne 0 ]; then
+        log_error "$_funcname" \
+          "find (exit: $_find_exit_status): failed to find temporary assets."
+        return 1
+      fi
+      ;;
+    --template)
+      local _template="${_temp_dir}/${_asset_name}"
+      printf '%s\n' "$_template"
+      ;;
+    *)
       log_error "$_funcname" \
-        "Failed to create $_asset_type '$_asset_path': is not a ${_asset_type}."
-
+        "Internal: invalid param: usage: $_usage."
       return 1
-    fi
-    ;;
-  --list)
-    local _find_exit_status=
-
-    find "$_temp_dir" -maxdepth 1 -name "$_asset_basename*" -print0 | sed 's/ /'"$(get_space_char_mask)"'/g' | xargs -0
-    _find_exit_status=$?
-
-    if [ $_find_exit_status -ne 0 ]; then
-      log_error "$_funcname" \
-        "find (exit: $_find_exit_status): failed to find temporary assets."
-      return 1
-    fi
-    ;;
-  --list-length)
-    local _find_exit_status=
-
-    find "$_temp_dir" -maxdepth 1 -name "letsgo.*" | wc -l
-    _find_exit_status=$?
-
-    if [ $_find_exit_status -ne 0 ]; then
-      log_error "$_funcname" \
-        "find (exit: $_find_exit_status): failed to find temporary assets."
-      return 1
-    fi
-    ;;
-  --template)
-    local _template="${_temp_dir}/${_asset_name}"
-    printf '%s\n' "$_template"
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Internal: invalid param: usage: $_usage."
-    return 1
-    ;;
+      ;;
   esac
 
   return 0
@@ -1891,24 +1891,24 @@ get_total_lines_num() {
   fi
 
   case "$_option" in
-  --file)
-    if [ -z "$_target_file" ] && [ ! -f "$_target_file" ]; then
-      local _error_message=
+    --file)
+      if [ -z "$_target_file" ] && [ ! -f "$_target_file" ]; then
+        local _error_message=
 
-      [ -z "$_target_file" ] &&
-        _error_message='no target path detected' ||
-        _error_message="the payload ('$_target_file') is not a file"
+        [ -z "$_target_file" ] \
+          && _error_message='no target path detected' \
+          || _error_message="the payload ('$_target_file') is not a file"
 
+        log_error "$_funcname" \
+          "Internal: $_error_message: usage: $_usage."
+        return 1
+      fi
+      ;;
+    *)
       log_error "$_funcname" \
-        "Internal: $_error_message: usage: $_usage."
+        "Internal: invalid option ('$_option'): usage: $_usage."
       return 1
-    fi
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Internal: invalid option ('$_option'): usage: $_usage."
-    return 1
-    ;;
+      ;;
   esac
 
   if ! wc -l <"$_target_file"; then
@@ -1951,53 +1951,53 @@ set_text() {
     _reset_color="$(tput sgr0)"
 
     case "$_subcommand" in
-    bold)
-      _text=$2
-      _text_color="$(tput bold)"
-      ;;
-    green | red | yellow)
-      local _GREEN_ID=2
-      local _RED_ID=1
-      local _YELLOW_ID=3
+      bold)
+        _text=$2
+        _text_color="$(tput bold)"
+        ;;
+      green | red | yellow)
+        local _GREEN_ID=2
+        local _RED_ID=1
+        local _YELLOW_ID=3
 
-      local _BOLD_MODE=
-      local _NORMAL_MODE=
+        local _BOLD_MODE=
+        local _NORMAL_MODE=
 
-      _BOLD_MODE="$(tput bold)"
+        _BOLD_MODE="$(tput bold)"
 
-      [ "$_subcommand" = 'green' ] && _text_color_id=$_GREEN_ID
-      [ "$_subcommand" = 'red' ] && _text_color_id=$_RED_ID
-      [ "$_subcommand" = 'yellow' ] && _text_color_id=$_YELLOW_ID
+        [ "$_subcommand" = 'green' ] && _text_color_id=$_GREEN_ID
+        [ "$_subcommand" = 'red' ] && _text_color_id=$_RED_ID
+        [ "$_subcommand" = 'yellow' ] && _text_color_id=$_YELLOW_ID
 
-      _text_mode=$_NORMAL_MODE
+        _text_mode=$_NORMAL_MODE
 
-      while [ $# -gt 0 ]; do
-        case "$2" in
-        --bold)
-          _text=${3:-}
-          _text_mode=$_BOLD_MODE
-          break
-          ;;
-        -*)
-          _text=${3:-}
-          _text_color=$_reset_color
-          _text_color_id=0
-          break
-          ;;
-        *)
-          _text=$2
-          break
-          ;;
-        esac
-        shift
-      done
+        while [ $# -gt 0 ]; do
+          case "$2" in
+            --bold)
+              _text=${3:-}
+              _text_mode=$_BOLD_MODE
+              break
+              ;;
+            -*)
+              _text=${3:-}
+              _text_color=$_reset_color
+              _text_color_id=0
+              break
+              ;;
+            *)
+              _text=$2
+              break
+              ;;
+          esac
+          shift
+        done
 
-      _text_color=''"${_text_mode}$(tput setaf $_text_color_id)"''
-      ;;
-    *)
-      printf '%s\n' "$2" | grep --quiet "\-.*" && _text=${3:-} || _text=$2
-      _text_color=$_reset_color
-      ;;
+        _text_color=''"${_text_mode}$(tput setaf $_text_color_id)"''
+        ;;
+      *)
+        printf '%s\n' "$2" | grep --quiet "\-.*" && _text=${3:-} || _text=$2
+        _text_color=$_reset_color
+        ;;
     esac
 
     if is_no_color; then
@@ -2028,30 +2028,30 @@ set_trap() {
   fi
 
   case $_option in
-  cleanup)
-    local _CLEANUP_OPTION="${2:-}"
-    local _asset_path="${3:-}"
+    cleanup)
+      local _CLEANUP_OPTION="${2:-}"
+      local _asset_path="${3:-}"
 
-    if [ "$_CLEANUP_OPTION" = '--path' ]; then
-      if [ -n "$_asset_path" ]; then
-        trap_cleanup --path "$_asset_path"
+      if [ "$_CLEANUP_OPTION" = '--path' ]; then
+        if [ -n "$_asset_path" ]; then
+          trap_cleanup --path "$_asset_path"
+        else
+          log_error "$_funcname" \
+            "Internal: invalid asset path ('$_asset_path'): usage: ${_usage}."
+          return 1
+        fi
       else
-        log_error "$_funcname" \
-          "Internal: invalid asset path ('$_asset_path'): usage: ${_usage}."
-        return 1
+        trap_cleanup
       fi
-    else
-      trap_cleanup
-    fi
-    ;;
-  abort)
-    trap_abort_command
-    ;;
-  *)
-    log_error "$_funcname" \
-      "Intrernal: unknown parameter ('$_option'): usage ${_usage}."
-    return 1
-    ;;
+      ;;
+    abort)
+      trap_abort_command
+      ;;
+    *)
+      log_error "$_funcname" \
+        "Intrernal: unknown parameter ('$_option'): usage ${_usage}."
+      return 1
+      ;;
   esac
 
   return 0
@@ -2186,8 +2186,8 @@ log_info() {
     local _LEVEL_TAG="INFO"
 
     if [ -n "${2:-}" ]; then
-      [ "$g_verbose_mode" = 'yes' ] &&
-        _info_message="${_info_message}: $2" || _info_message="$2"
+      [ "$g_verbose_mode" = 'yes' ] \
+        && _info_message="${_info_message}: $2" || _info_message="$2"
     fi
 
     log_printf "[$_LEVEL_TAG] $_info_message"
@@ -2209,8 +2209,8 @@ log_success() {
     _LEVEL_TAG=$(set_text green --bold "PASS")
 
     if [ -n "${2:-}" ]; then
-      [ "$g_verbose_mode" = 'yes' ] &&
-        _success_message="${_success_message}: $2" || _success_message="$2"
+      [ "$g_verbose_mode" = 'yes' ] \
+        && _success_message="${_success_message}: $2" || _success_message="$2"
     fi
 
     log_printf "[$_LEVEL_TAG] $_success_message"
@@ -2232,8 +2232,8 @@ log_error() {
     _LEVEL_TAG=$(set_text red --bold "ERROR")
 
     if [ -n "${2:-}" ]; then
-      [ "$g_verbose_mode" = 'yes' ] &&
-        _error_message="${_error_message}: $2" || _error_message="$2"
+      [ "$g_verbose_mode" = 'yes' ] \
+        && _error_message="${_error_message}: $2" || _error_message="$2"
     fi
 
     log_printf "[$_LEVEL_TAG] $_error_message"
@@ -2255,8 +2255,8 @@ log_warn() {
     _LEVEL_TAG=$(set_text yellow --bold "WARN")
 
     if [ -n "${2:-}" ]; then
-      [ "$g_verbose_mode" = 'yes' ] &&
-        _warn_message="${_warn_message}: $2" || _warn_message="$2"
+      [ "$g_verbose_mode" = 'yes' ] \
+        && _warn_message="${_warn_message}: $2" || _warn_message="$2"
     fi
 
     log_printf "[$_LEVEL_TAG] $_warn_message"
