@@ -1451,12 +1451,16 @@ get_main_opts() {
           exit 0
           ;;
         q)
+          # TODO: Implement quiet mode logic (currently unused)
+          # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
           g_quiet_mode=yes
           ;;
         v)
           g_verbose_mode=yes
           ;;
         y)
+          # TODO: Implement non-interactive mode logic (currently unused)
+          # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
           g_need_tty=no
           ;;
         *) ;;
