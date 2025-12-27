@@ -1688,7 +1688,7 @@ get_remote_go_version_str() {
 # Output: The script name string.
 # Returns: 0 on success, 1 on error.
 get_script_name() {
-  local _script_name='letsgo'
+  local _script_name='letsgolang'
 
   if [ -z "$_script_name" ]; then
     _script_name=$(basename "$0" .sh) || return 1
