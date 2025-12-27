@@ -54,6 +54,10 @@ Usage: $(get_script_name)[EXE] [OPTIONS]
 Options:
   -v, --verbose
           Enable verbose mode
+  -q, --quiet
+          Enable quiet mode (suppress non-essential output)
+  -y, --assume-yes
+          Run in non-interactive mode (assume yes to all prompts)
   -h, --help
           Print help
   -V, --version
@@ -72,6 +76,13 @@ main() {
   trap '{ set_trap cleanup; }' EXIT
 
   get_main_opts "$@" || return 1
+
+  # Auto-detect TTY: If not running in an interactive terminal,
+  # force non-interactive mode to avoid errors with /dev/tty.
+  if [ ! -t 1 ]; then
+    g_need_tty=no
+  fi
+
   process_main_routine || return 1
 
   return 0
@@ -772,7 +783,12 @@ EOF
     log_info "$_funcname" "Extracting new files..."
   fi
 
-  _status_message=$(tar -C "$_local_opt_dir" -xzf "$_installation_file" 2>&1 >/dev/tty)
+  if [ "$g_need_tty" = "yes" ]; then
+    _status_message=$(tar -C "$_local_opt_dir" -xzf "$_installation_file" 2>&1 >/dev/tty)
+  else
+    _status_message=$(tar -C "$_local_opt_dir" -xzf "$_installation_file" 2>&1)
+  fi
+
   _status_code=$?
 
   if [ "$_status_code" -ne 0 ]; then
@@ -1419,54 +1435,53 @@ get_file_permission() {
 get_main_opts() {
   for arg in "$@"; do
     case "$arg" in
-      --help)
-        usage
-        exit 0
-        ;;
-      --quiet)
-        g_quiet_mode=yes
-        ;;
-      --verbose)
-        g_verbose_mode=yes
-        ;;
-      --version)
-        get_script_version
-        exit 0
-        ;;
-      *)
-        OPTIND=1
-        if [ "${arg%%--*}" = "" ]; then
-          # Long option (other than --help);
-          # don't attempt to interpret it.
-          continue
-        fi
-        while getopts :Vhqvy sub_arg "$arg"; do
-          case "$sub_arg" in
-            V)
-              get_script_version
-              exit 0
-              ;;
-            h)
-              usage
-              exit 0
-              ;;
-            q)
-              # TODO: Implement quiet mode logic (currently unused)
-              # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
-              g_quiet_mode=yes
-              ;;
-            v)
-              g_verbose_mode=yes
-              ;;
-            y)
-              # TODO: Implement non-interactive mode logic (currently unused)
-              # shellcheck disable=SC2034 # foo appears unused. Verify it or export it.
-              g_need_tty=no
-              ;;
-            *) ;;
-          esac
-        done
-        ;;
+    --assume-yes)
+      g_need_tty=no
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    --quiet)
+      g_quiet_mode=yes
+      ;;
+    --verbose)
+      g_verbose_mode=yes
+      ;;
+    --version)
+      get_script_version
+      exit 0
+      ;;
+    *)
+      OPTIND=1
+      if [ "${arg%%--*}" = "" ]; then
+        # Long option (other than --help);
+        # don't attempt to interpret it.
+        continue
+      fi
+      while getopts :Vhqvy sub_arg "$arg"; do
+        case "$sub_arg" in
+        V)
+          get_script_version
+          exit 0
+          ;;
+        h)
+          usage
+          exit 0
+          ;;
+        q)
+          g_quiet_mode=yes
+          ;;
+        v)
+          g_verbose_mode=yes
+          ;;
+        y)
+          g_need_tty=no
+          ;;
+        *) ;;
+        esac
+      done
+      ;;
     esac
   done
 }
@@ -2165,6 +2180,10 @@ trap_cleanup() {
 # Arguments: <message>
 # Returns: 0 on success, 1 on invalid arguments.
 log_printf() {
+  if [ "$g_quiet_mode" = 'yes' ]; then
+    return 0
+  fi
+
   if [ $# -ge 1 ] && [ -n "$1" ]; then
     local _timestamp=
     [ "$g_verbose_mode" = 'yes' ] && _timestamp="[$(get_timestamp)] "
