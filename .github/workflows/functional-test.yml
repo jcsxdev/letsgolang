@@ -1,0 +1,63 @@
+name: Functional Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - ".github/workflows/functional-test.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+  # Allow manual workflow execution.
+  workflow_dispatch:
+  # Schedule weekly runs to detect upstream changes (e.g., go.dev HTML structure).
+  schedule:
+    - cron: "0 8 * * 1" # Every Monday at 08:00 UTC.
+
+permissions:
+  contents: read
+
+jobs:
+  integration-test:
+    name: Install & Verify Go
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Installer Script
+        run: |
+          # Enable fail-fast mode: exit immediately if any command fails.
+          set -euo pipefail
+          chmod +x src/letsgolang.sh
+          ./src/letsgolang.sh
+
+      - name: Verify Installation (Direct Binary Check)
+        run: |
+          set -euo pipefail
+
+          # Define the expected installation path for the current user.
+          GO_BIN="$HOME/.local/opt/go/bin/go"
+
+          echo "Checking if binary exists at: $GO_BIN"
+          if [ ! -f "$GO_BIN" ]; then
+            echo "::error::Binary not found at expected location!"
+            exit 1
+          fi
+
+          echo "Binary found. Validating execution..."
+          INSTALLED_VERSION=$($GO_BIN version)
+          echo "Output: $INSTALLED_VERSION"
+
+          # Validate output against strict Regex (e.g., "go version go1.21.5...").
+          # This ensures we really have Go installed and not just a dummy file.
+          if ! [[ "$INSTALLED_VERSION" =~ ^go\ version\ go[0-9]+\.[0-9]+ ]]; then
+            echo "::error::Output does not match expected Go version signature."
+            exit 1
+          fi
+
+          echo "Verification successful."
