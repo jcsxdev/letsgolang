@@ -1,5 +1,14 @@
 # letsgolang: The Go Installer
 
+<div align="center">
+
+[![Shell Script Quality Checks](https://github.com/jcsxdev/letsgolang/actions/workflows/shell-quality.yml/badge.svg)](https://github.com/jcsxdev/letsgolang/actions/workflows/shell-quality.yml)
+[![Security Audit](https://github.com/jcsxdev/letsgolang/actions/workflows/security.yml/badge.svg)](https://github.com/jcsxdev/letsgolang/actions/workflows/security.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jcsxdev/letsgolang/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jcsxdev/letsgolang)
+[![License](https://img.shields.io/github/license/jcsxdev/letsgolang)](LICENSE)
+
+</div>
+
 A minimalist and POSIX-compliant non-root installer for the Go programming language on Linux.
 
 ## Overview
