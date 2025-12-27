@@ -87,10 +87,14 @@ update_file_content() {
 
   log_info "$_funcname" "Updating '$_target_file'..."
 
-  # Use sed to update the version, commit, and date in the file
-  sed -e "s|G_SCRIPT_VERSION='.*'|G_SCRIPT_VERSION='$_new_version'|; \
-          s|G_SCRIPT_COMMIT='.*'|G_SCRIPT_COMMIT='$_new_commit'|; \
-          s|G_SCRIPT_DATE='.*'|G_SCRIPT_DATE='$_new_date'|" \
+  # Use a sed regex that handles:
+  # - G_SCRIPT_VERSION='1.2.3'
+  # - G_SCRIPT_VERSION=
+  # - G_SCRIPT_VERSION=""
+  # The regex looks for the variable name and replaces the entire assignment.
+  sed -e "s|G_SCRIPT_VERSION=.*|G_SCRIPT_VERSION='$_new_version'|; \
+          s|G_SCRIPT_COMMIT=.*|G_SCRIPT_COMMIT='$_new_commit'|; \
+          s|G_SCRIPT_DATE=.*|G_SCRIPT_DATE='$_new_date'|" \
     "$_target_file" >"$_temp_file" && mv "$_temp_file" "$_target_file"
 
   # Restore original permissions

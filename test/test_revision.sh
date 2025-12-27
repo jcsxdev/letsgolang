@@ -93,6 +93,27 @@ test_revision_defaults_to_zero_version() {
   _assert_contains "$(cat src/letsgolang.sh)" "G_SCRIPT_VERSION='0.0.0'" "Version should default to 0.0.0 when no tags exist."
 }
 
+# test_revision_handles_empty_initial_values: Edge case test to ensure the script
+# can "heal" a file where constants are empty and unquoted.
+test_revision_handles_empty_initial_values() {
+  local _target="src/empty_vars.sh"
+  local _expected="2.0.0"
+
+  # Create a file with empty and unquoted values.
+  printf "readonly G_SCRIPT_VERSION=\nreadonly G_SCRIPT_COMMIT=\nreadonly G_SCRIPT_DATE=\n" > "$_target"
+  
+  # Set Git state.
+  git tag "v$_expected"
+
+  # Execute revision.
+  "${OLDPWD}/scripts/revision.sh" "$_target" >/dev/null
+
+  # Assertions
+  _assert_contains "$(cat "$_target")" "G_SCRIPT_VERSION='$_expected'" "Should heal and update empty unquoted version."
+  _assert_contains "$(cat "$_target")" "G_SCRIPT_COMMIT=" "Should update empty unquoted commit."
+  _assert_contains "$(cat "$_target")" "G_SCRIPT_DATE=" "Should update empty unquoted date."
+}
+
 # test_revision_fails_on_invalid_target: Ensures the script fails gracefully
 # when the target file lacks the required versioning markers.
 test_revision_fails_on_invalid_target() {
