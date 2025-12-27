@@ -25,6 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    # Define terminal type to fix "tput: No value for $TERM" warnings in logs
+    env:
+      TERM: xterm-256color
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
