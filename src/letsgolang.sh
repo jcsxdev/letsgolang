@@ -1435,53 +1435,53 @@ get_file_permission() {
 get_main_opts() {
   for arg in "$@"; do
     case "$arg" in
-    --assume-yes)
-      g_need_tty=no
-      ;;
-    --help)
-      usage
-      exit 0
-      ;;
-    --quiet)
-      g_quiet_mode=yes
-      ;;
-    --verbose)
-      g_verbose_mode=yes
-      ;;
-    --version)
-      get_script_version
-      exit 0
-      ;;
-    *)
-      OPTIND=1
-      if [ "${arg%%--*}" = "" ]; then
-        # Long option (other than --help);
-        # don't attempt to interpret it.
-        continue
-      fi
-      while getopts :Vhqvy sub_arg "$arg"; do
-        case "$sub_arg" in
-        V)
-          get_script_version
-          exit 0
-          ;;
-        h)
-          usage
-          exit 0
-          ;;
-        q)
-          g_quiet_mode=yes
-          ;;
-        v)
-          g_verbose_mode=yes
-          ;;
-        y)
-          g_need_tty=no
-          ;;
-        *) ;;
-        esac
-      done
-      ;;
+      --assume-yes)
+        g_need_tty=no
+        ;;
+      --help)
+        usage
+        exit 0
+        ;;
+      --quiet)
+        g_quiet_mode=yes
+        ;;
+      --verbose)
+        g_verbose_mode=yes
+        ;;
+      --version)
+        get_script_version
+        exit 0
+        ;;
+      *)
+        OPTIND=1
+        if [ "${arg%%--*}" = "" ]; then
+          # Long option (other than --help);
+          # don't attempt to interpret it.
+          continue
+        fi
+        while getopts :Vhqvy sub_arg "$arg"; do
+          case "$sub_arg" in
+            V)
+              get_script_version
+              exit 0
+              ;;
+            h)
+              usage
+              exit 0
+              ;;
+            q)
+              g_quiet_mode=yes
+              ;;
+            v)
+              g_verbose_mode=yes
+              ;;
+            y)
+              g_need_tty=no
+              ;;
+            *) ;;
+          esac
+        done
+        ;;
     esac
   done
 }
