@@ -1,11 +1,3 @@
-# .github/workflows/shell-quality.yml
-#
-# GitHub Actions workflow for Shell Script Quality Assurance.
-#
-# This workflow performs static analysis (ShellCheck) and formatting checks (shfmt)
-# on all shell scripts in the repository to ensure POSIX compliance and
-# maintainability.
-#
 name: Shell Script Quality Checks
 
 on:
@@ -24,68 +16,93 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Cache ShellCheck and shfmt
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/shellcheck
-            ~/.cache/shfmt
-          key: ${{ runner.os }}-shellcheck-shfmt-${{ hashFiles('**/*.sh') }}
-          restore-keys: |
-            ${{ runner.os }}-shellcheck-shfmt-
-
-      - name: Install Dependencies (ShellCheck, curl)
+      - name: Install Dependencies
+        # Install bash for logic handling, coreutils for GNU sha256sum, and linters.
         run: |
-          apk add --no-cache shellcheck curl
+          apk add --no-cache shellcheck curl bash coreutils
+          mkdir -p /usr/local/bin
 
       - name: Download and Validate shfmt
         env:
-          # Target version for shfmt
           SHFMT_VERSION: v3.8.0
+        shell: bash
         run: |
+          set -eo pipefail
+
           printf "Downloading shfmt %s...\n" "${SHFMT_VERSION}"
-          curl -sL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
-          curl -sL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/sha256sums.txt" -o /tmp/sha256sums.txt
+
+          # Download binary and checksums with fail-fast on HTTP errors.
+          curl --fail -sL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
+          curl --fail -sL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/sha256sums.txt" -o /tmp/sha256sums.txt
 
           printf "Verifying shfmt checksum...\n"
-          grep "shfmt_${SHFMT_VERSION}_linux_amd64" /tmp/sha256sums.txt | (cd /usr/local/bin && sha256sum -c - --ignore-missing)
+
+          # Retrieve the specific checksum line; fail if missing.
+          matched=$(grep -m1 "shfmt_${SHFMT_VERSION}_linux_amd64" /tmp/sha256sums.txt) || {
+            printf "Error: Checksum entry not found for version %s\n" "${SHFMT_VERSION}"
+            exit 1
+          }
+
+          # Map upstream filename to local 'shfmt' binary using canonical format.
+          echo "$matched" | awk '{print $1 "  shfmt"}' > /usr/local/bin/shfmt.sha256
+
+          # Verify integrity.
+          (cd /usr/local/bin && sha256sum -c shfmt.sha256) || {
+            printf "Error: Checksum verification failed.\n"
+            exit 1
+          }
 
           chmod +x /usr/local/bin/shfmt
           printf "shfmt installed and validated successfully.\n"
 
       - name: Run ShellCheck and shfmt
+        shell: bash
         run: |
-          # Robustly find all shell scripts with valid shebangs in relevant directories.
-          # We use null terminators (-print0, -z) to handle special characters in filenames.
+          set -eo pipefail
+
           _temp_list=$(mktemp)
-          find ./src ./scripts ./test -type f -executable -print0 | \
-            xargs -0 grep -lZE '^(#!/(bin/(ba)?sh|usr/bin/(env )?sh|usr/bin/env (ba)?sh))' > "$_temp_list" || true
+
+          # Discovery loop: recursively find files ending in .sh or containing a shell shebang.
+          # Excludes hidden directories (e.g., .git).
+          while IFS= read -r -d '' file; do
+            # Skip non-regular files.
+            [ -f "$file" ] || continue
+
+            # Match by extension.
+            if [[ "$file" == *.sh ]]; then
+              printf '%s\0' "$file" >> "$_temp_list"
+              continue
+            fi
+
+            # Match by shebang (sh or bash).
+            if head -n1 "$file" | grep -qE '^#!.*\b(sh|bash)\b'; then
+              printf '%s\0' "$file" >> "$_temp_list"
+            fi
+          done < <(find . -type f -not -path '*/.*' -print0)
 
           if [ ! -s "$_temp_list" ]; then
             printf "No shell scripts found. Skipping checks.\n"
             exit 0
           fi
 
-          printf "Shell scripts identified for analysis:\n"
+          printf "Target scripts for analysis:\n"
           tr '\0' '\n' < "$_temp_list"
 
-          # 1. Run ShellCheck
+          # 1. Static Analysis (ShellCheck)
           printf "\n--- Running ShellCheck ---\n"
-          xargs -0 shellcheck -f gcc < "$_temp_list" || {
-            printf "Error: ShellCheck identified issues in the scripts.\n"
+          xargs -0 shellcheck -x -f gcc < "$_temp_list" || {
+            printf "Error: ShellCheck detected issues.\n"
             exit 1
           }
 
-          # 2. Check Formatting with shfmt
-          # -d: Display diffs
-          # -i 2: Indent with 2 spaces
-          # -ci: Indent switch cases
-          # -bn: Binary operators at start of line
+          # 2. Formatting Check (shfmt)
+          # Flags: -d (diff), -i 2 (indent), -ci (case indent), -bn (binary ops start line).
           printf "\n--- Verifying Code Formatting (shfmt) ---\n"
           xargs -0 shfmt -d -i 2 -ci -bn < "$_temp_list" || {
-            printf "Error: Formatting inconsistencies found. Run 'shfmt -w -i 2 -ci -bn .' locally to fix.\n"
+            printf "Error: Formatting inconsistencies detected.\n"
+            printf "Run locally: shfmt -w -i 2 -ci -bn src/ test/\n"
             exit 1
           }
 
-          printf "\nSuccess: All shell scripts passed quality and formatting checks.\n"
+          printf "\nSuccess: All quality checks passed.\n"
           rm "$_temp_list"
