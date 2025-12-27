@@ -4,11 +4,11 @@ A minimalist and POSIX-compliant non-root installer for the Go programming langu
 
 ## Overview
 
-`letsgolang` automates the process of fetching, verifying, and installing Go distributions directly into your user environment, without requiring root privileges.
+`letsgolang` automates the process of fetching, verifying, and installing the latest official Go distribution directly into your user environment.
 
-- **Non-root**: Installs to `$HOME/.local/opt/go` by default.
-- **POSIX Compliant**: Written in pure portable shell script.
-- **Robust**: Includes checksum verification and automatic environment configuration.
+- **Non-root**: Installs to `$HOME/.local/opt/go` by default, requiring no `sudo` privileges.
+- **Auditable**: Written in pure POSIX shell. No opaque binaries or hidden dependencies to trust.
+- **Reliable**: Enforces SHA256 checksum verification and handles environment configuration automatically.
 
 ## Quick Start
 
