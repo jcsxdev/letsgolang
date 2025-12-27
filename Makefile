@@ -1,4 +1,4 @@
-.PHONY: all help test bump-version test-only
+.PHONY: all help test bump-version test-filter check
 
 .DEFAULT_GOAL := help
 
@@ -38,3 +38,7 @@ bump-version:
 		exit 1; \
 	fi
 	@./scripts/revision.sh $(TARGET_SCRIPT)
+
+## check: Perform project integrity and metadata synchronization checks.
+check:
+	@./scripts/check_project.sh
