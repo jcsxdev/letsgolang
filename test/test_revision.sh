@@ -30,6 +30,7 @@ setUp() {
   git init >/dev/null
   git config user.email "test@example.com" >/dev/null
   git config user.name "Test User" >/dev/null
+  git config commit.gpgSign false >/dev/null
   mkdir -p src
 }
 
