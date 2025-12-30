@@ -1455,9 +1455,9 @@ get_main_opts() {
       *)
         OPTIND=1
         if [ "${arg%%--*}" = "" ]; then
-          # Long option (other than --help);
-          # don't attempt to interpret it.
-          continue
+          printf "Error: Unknown option: %s\n" "$arg" >&2
+          usage
+          return 1
         fi
         while getopts :Vhqvy sub_arg "$arg"; do
           case "$sub_arg" in
@@ -1478,7 +1478,11 @@ get_main_opts() {
             y)
               g_need_tty=no
               ;;
-            *) ;;
+            \? | *)
+              printf "Error: Unknown option: -%s\n" "$OPTARG" >&2
+              usage
+              return 1
+              ;;
           esac
         done
         ;;

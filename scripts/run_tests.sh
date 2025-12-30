@@ -79,9 +79,13 @@ check_ms_support() {
 format_duration() {
   local _d="$1"
   if [ "$G_HAS_MS" = "true" ]; then
-    local _s=$((_d / 1000))
-    local _m=$((_d % 1000))
-    printf "%d.%03ds" "$_s" "$_m"
+    if [ "$_d" -lt 1000 ]; then
+      printf "%dms" "$_d"
+    else
+      local _s=$((_d / 1000))
+      local _m=$((_d % 1000))
+      printf "%d.%03ds" "$_s" "$_m"
+    fi
   else
     printf "%ds" "$_d"
   fi
@@ -153,7 +157,7 @@ run_test_file() {
     else
       G_TOTAL_FAILURES=$((G_TOTAL_FAILURES + 1))
       # Update the line with failure status.
-      printf "\r\033[K %s %s\n" "$(set_text red "✗")" "$(set_text red "$_func")"
+      printf "\r\033[K %s %s\n" "$(set_text red "✕")" "$(set_text red "$_func")"
       printf "%s\n" "$(set_text red "  --- FAILURE OUTPUT ---")"
       sed 's/^/    /' "$_output_file"
       printf "\n"
