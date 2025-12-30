@@ -2,6 +2,7 @@
 #
 # test_functional.sh - Functional integration tests for letsgolang.sh
 #
+# shellcheck disable=SC3043 # In POSIX sh, local is undefined but supported by many shells.
 
 # --- Setup ---
 
@@ -13,7 +14,7 @@ TARGET="./src/letsgolang.sh"
 
 # Helper to run the target script as an executable, unsetting SOURCED_FOR_TESTING
 run_target() {
-  SOURCED_FOR_TESTING= "$TARGET" "$@"
+  SOURCED_FOR_TESTING="" "$TARGET" "$@"
 }
 
 test_no_color_support() {

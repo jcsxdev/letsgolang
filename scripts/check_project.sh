@@ -68,6 +68,36 @@ check_version_alignment() {
   return 0
 }
 
+# check_shell_quality: Runs ShellCheck on project scripts.
+# Returns: 0 if all scripts pass, 1 otherwise.
+check_shell_quality() {
+  local _funcname='check_shell_quality'
+  local _scripts="src/*.sh scripts/*.sh test/*.sh"
+  local _fail=0
+
+  if ! command -v shellcheck >/dev/null 2>&1; then
+    log_warn "$_funcname" "ShellCheck not found. Skipping quality check."
+    return 0
+  fi
+
+  log_info "$_funcname" "Running ShellCheck validation..."
+
+  for _file in $_scripts; do
+    [ -f "$_file" ] || continue
+    if ! cat "$_file" | shellcheck -x -e SC1091 -e SC2034 -; then
+      log_error "$_funcname" "ShellCheck failed for: $_file"
+      _fail=1
+    fi
+  done
+
+  if [ "$_fail" -eq 0 ]; then
+    log_info "$_funcname" "ShellCheck validation passed."
+    return 0
+  fi
+
+  return 1
+}
+
 ######################################################################
 # Main Function
 ######################################################################
@@ -96,6 +126,11 @@ main() {
 
   # 2. Check for version alignment with Git
   if ! check_version_alignment "$_target_script"; then
+    _exit_status=1
+  fi
+
+  # 3. Check shell script quality with ShellCheck
+  if ! check_shell_quality; then
     _exit_status=1
   fi
 
