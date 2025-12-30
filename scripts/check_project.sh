@@ -84,7 +84,7 @@ check_shell_quality() {
 
   for _file in $_scripts; do
     [ -f "$_file" ] || continue
-    if ! cat "$_file" | shellcheck -x -e SC1091 -e SC2034 -; then
+    if ! shellcheck -x - <"$_file"; then
       log_error "$_funcname" "ShellCheck failed for: $_file"
       _fail=1
     fi
@@ -96,6 +96,29 @@ check_shell_quality() {
   fi
 
   return 1
+}
+
+# check_code_formatting: Verifies code formatting using shfmt.
+# Returns: 0 if formatting is correct, 1 otherwise.
+check_code_formatting() {
+  local _funcname='check_code_formatting'
+  local _dirs="src scripts test"
+
+  if ! command -v shfmt >/dev/null 2>&1; then
+    log_warn "$_funcname" "shfmt not found. Skipping formatting check."
+    return 0
+  fi
+
+  log_info "$_funcname" "Running shfmt validation..."
+
+  # shellcheck disable=SC2086
+  if ! shfmt -d -i 2 -ci -bn $_dirs; then
+    log_error "$_funcname" "Formatting issues detected. Run: shfmt -w -i 2 -ci -bn src/ scripts/ test/"
+    return 1
+  fi
+
+  log_info "$_funcname" "Code formatting verified."
+  return 0
 }
 
 ######################################################################
@@ -134,8 +157,13 @@ main() {
     _exit_status=1
   fi
 
+  # 4. Check code formatting with shfmt
+  if ! check_code_formatting; then
+    _exit_status=1
+  fi
+
   if [ "$_exit_status" -eq 0 ]; then
-    log_success "$_funcname" "Project integrity verified successfully. ✨"
+    log_success "$_funcname" "Project integrity verified successfully."
   else
     log_error "$_funcname" "Project integrity checks failed. Run 'make bump-version' to fix metadata."
   fi
