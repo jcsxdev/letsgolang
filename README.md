@@ -60,8 +60,10 @@ cd letsgolang
 [INFO] Extracting 'go1.25.5.linux-amd64.tar.gz' file to '/home/user/.local/opt/go'...
 [INFO] STEP 6/6:
 [INFO] Configuring environment variables in /home/user/.bashrc...
-[INFO] Run: source /home/user/.bashrc
 [INFO] Done.
+
+To apply the changes to your current shell session, run:
+  . $HOME/.bashrc
 ```
 
 ## Uninstallation

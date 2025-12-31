@@ -35,6 +35,7 @@ g_verbose_mode=no   # If yes, provide detailed execution logs
 g_installation_filename= # Name of the downloaded tarball
 g_remote_version_str=    # Raw version string from Go server (e.g., go1.21.0)
 g_remote_version=        # Cleaned version string (e.g., 1.21.0)
+g_reload_command=        # Instruction to reload the shell profile
 g_total_execution_steps= # Total number of steps in the routine
 # END GENERAL BLOCK
 
@@ -193,6 +194,12 @@ process_main_routine() {
 
   if [ $_step_count -eq "$g_total_execution_steps" ]; then
     log_info "$_funcname" "Done."
+
+    if [ -n "$g_reload_command" ]; then
+      printf "\n%s\n" "$(set_text bold "To apply the changes to your current shell session, run:")"
+      printf "  %s\n\n" "$(set_text green "$g_reload_command")"
+    fi
+
     return 0
   fi
 
@@ -1022,16 +1029,16 @@ process_step6() {
     ' "$_profile_file" >"$_temp_dir/.profile" && mv "$_temp_dir/.profile" "$_profile_file"
   fi
 
-  # Output command to reload the profile file
+  # Set the reload command to be displayed at the end of the process
   case "${SHELL##*/}" in
     fish)
-      log_info "$_funcname" "Run: source ~/.config/fish/config.fish"
+      g_reload_command="source ~/.config/fish/config.fish"
       ;;
     nushell)
-      log_info "$_funcname" "Restart Nushell or run: source ~/.config/nushell/config.nu"
+      g_reload_command="source ~/.config/nushell/config.nu"
       ;;
     *)
-      log_info "$_funcname" "Run: source $_profile_file"
+      g_reload_command=". $(printf '%s\n' "$_profile_file" | sed "s|^$HOME|\\\$HOME|")"
       ;;
   esac
 }
