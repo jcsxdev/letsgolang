@@ -49,3 +49,24 @@ test_quiet_mode_arg() {
 test_verbose_mode_arg() {
   run_target --verbose --help >/dev/null
 }
+
+test_uninstall_arg() {
+  local _temp_home
+  _temp_home=$(umask 0077 && mktemp -d "${TMPDIR:-/tmp}/test_cli_args.XXXXXX")
+
+  # Create a fake installation to be removed
+  mkdir -p "$_temp_home/.local/opt/go"
+
+  local _output
+  # Input 'yes' is provided, though the prompt is currently bypassed in tests
+  # as stdin/stdout are not attached to a TTY.
+  _output=$(HOME="$_temp_home" echo "yes" | run_target --uninstall 2>&1)
+
+  _assert_contains "$_output" "Starting uninstallation..." "Should start uninstall routine."
+
+  if [ -d "$_temp_home/.local/opt/go" ]; then
+    _assert_equals "removed" "exists" "Installation dir should be removed."
+  fi
+
+  rm -rf "$_temp_home"
+}

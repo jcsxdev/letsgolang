@@ -66,15 +66,15 @@ cd letsgolang
 
 ## Uninstallation
 
-Since letsgolang runs without root privileges, removal is simple:
-
-1. Delete the installation directory:
+To uninstall Go, run the script with the `--uninstall` (or `-u`) flag:
 
 ```sh
-rm -rf $HOME/.local/opt/go
+./src/letsgolang.sh --uninstall
 ```
 
-2. Remove the Go environment variables from your shell configuration file (e.g., .bashrc or .zshrc).
+This command will:
+1. Remove the Go installation directory (`$HOME/.local/opt/go`).
+2. Check your shell configuration file for Go-related environment variables and advise you if manual cleanup is needed.
 
 ## Documentation
 

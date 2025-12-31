@@ -24,9 +24,10 @@ readonly G_SCRIPT_DATE='2025-12-27'
 
 # SETTINGS BLOCK
 # Global state flags determined by command-line arguments.
-g_need_tty=no     # Whether a TTY is required for output (not used currently)
-g_quiet_mode=no   # If yes, suppress non-essential output
-g_verbose_mode=no # If yes, provide detailed execution logs
+g_need_tty=yes      # Whether a TTY is available for interactive prompts
+g_quiet_mode=no     # If yes, suppress non-essential output
+g_uninstall_mode=no # If yes, run the uninstallation routine
+g_verbose_mode=no   # If yes, provide detailed execution logs
 # END SETTINGS BLOCK
 
 # GENERAL BLOCK
@@ -52,6 +53,8 @@ The non-root installer for Go programming language
 Usage: $(get_script_name)[EXE] [OPTIONS]
 
 Options:
+  -u, --uninstall, --remove
+          Uninstall Go (removes binary and environment configuration)
   -v, --verbose
           Enable verbose mode
   -q, --quiet
@@ -83,7 +86,11 @@ main() {
     g_need_tty=no
   fi
 
-  process_main_routine || return 1
+  if [ "$g_uninstall_mode" = "yes" ]; then
+    process_uninstall_routine || return 1
+  else
+    process_main_routine || return 1
+  fi
 
   return 0
 }
@@ -189,6 +196,71 @@ process_main_routine() {
     return 0
   fi
 
+  return 0
+}
+
+# process_uninstall_routine: Removes Go installation and environment configuration.
+# Returns: 0 on success, 1 on error.
+process_uninstall_routine() {
+  local _funcname='process_uninstall_routine'
+  local _go_dir=
+  local _profile_file=
+
+  _go_dir="$(get_go_dir)"
+
+  log_info "$_funcname" "Starting uninstallation..."
+
+  if [ -d "$_go_dir" ]; then
+    log_info "$_funcname" "Found Go installation at '$_go_dir'."
+    if [ "$g_need_tty" = "yes" ]; then
+      printf "This action will remove the Go installation from your system.\n"
+      printf "Are you sure you want to proceed? Please type 'yes' to confirm: "
+      read -r _confirmation
+      if [ "$_confirmation" != "yes" ]; then
+        log_info "$_funcname" "Uninstallation aborted."
+        return 0
+      fi
+    fi
+
+    if rm -rf "$_go_dir"; then
+      log_success "$_funcname" "Removed installation directory."
+    else
+      log_error "$_funcname" "Failed to remove '$_go_dir'."
+      return 1
+    fi
+  else
+    log_warn "$_funcname" "Go installation directory '$_go_dir' not found."
+  fi
+
+  # Identifies the active shell environment to locate the corresponding initialization profile.
+  case "$SHELL" in
+    */bash)
+      if [ -f "$HOME/.bash_profile" ]; then
+        _profile_file="$HOME/.bash_profile"
+      else
+        _profile_file="$HOME/.bashrc"
+      fi
+      ;;
+    */zsh) _profile_file="$HOME/.zshrc" ;;
+    */fish) _profile_file="$HOME/.config/fish/config.fish" ;;
+    */nushell) _profile_file="$HOME/.config/nushell/config.toml" ;;
+    *) _profile_file="$HOME/.profile" ;;
+  esac
+
+  if [ -f "$_profile_file" ]; then
+    log_info "$_funcname" "Checking profile '$_profile_file' for Go environment variables..."
+
+    # Simple grep check to see if we should advise the user
+    if grep -q "go/bin" "$_profile_file"; then
+      log_warn "$_funcname" "Go related paths were found in '$_profile_file'."
+      log_info "$_funcname" \
+        "Please manually edit '$_profile_file' to remove GOROOT and PATH exports if they are no longer needed."
+    else
+      log_info "$_funcname" "No obvious Go paths found in '$_profile_file'."
+    fi
+  fi
+
+  log_success "$_funcname" "Uninstallation complete."
   return 0
 }
 
@@ -1445,6 +1517,9 @@ get_main_opts() {
       --quiet)
         g_quiet_mode=yes
         ;;
+      --remove | --uninstall)
+        g_uninstall_mode=yes
+        ;;
       --verbose)
         g_verbose_mode=yes
         ;;
@@ -1459,7 +1534,7 @@ get_main_opts() {
           usage
           return 1
         fi
-        while getopts :Vhqvy sub_arg "$arg"; do
+        while getopts :Vhquvy sub_arg "$arg"; do
           case "$sub_arg" in
             V)
               get_script_version
@@ -1471,6 +1546,9 @@ get_main_opts() {
               ;;
             q)
               g_quiet_mode=yes
+              ;;
+            u)
+              g_uninstall_mode=yes
               ;;
             v)
               g_verbose_mode=yes
