@@ -2230,23 +2230,22 @@ trap_abort_command() {
 # shellcheck disable=SC2120 # foo references arguments, but none are ever passed.
 trap_cleanup() {
   local _funcname='trap_cleanup'
+  local _option="${1:-}"
+  local _asset_path="${2:-}"
 
   local _assets_list=
-  local _asset_path="${2:-}"
   local _is_asset_cleanup_by_path=false
-  local _option="${1:-}"
-  local _status_message=
 
-  if [ $# -ne 2 ] && [ "$_option" != '--path' ] && [ -z "$_asset_path" ]; then
-    _assets_list="$(get_temporary_asset --list)" || return 1
-  else
+  # Determines if cleanup should target a single path or the entire temporary asset list.
+  if [ "$_option" = '--path' ] && [ -n "$_asset_path" ]; then
     _is_asset_cleanup_by_path=true
     _assets_list="$_asset_path"
+  else
+    _assets_list="$(get_temporary_asset --list)" || return 1
   fi
 
   if [ -n "$_assets_list" ]; then
     local _invalid_assets_list=
-    local _rm_exit_status=
     local _rm_failed_list=
 
     for asset_path in $_assets_list; do
@@ -2267,13 +2266,12 @@ trap_cleanup() {
       fi
     done
 
-    if [ $_is_asset_cleanup_by_path = false ]; then
+    # Logic to report results (only if not in single path mode)
+    if [ "$_is_asset_cleanup_by_path" = false ]; then
       if [ -z "$_invalid_assets_list" ] && [ -z "$_rm_failed_list" ]; then
-        log_info "$_funcname" \
-          "All temporary assets has been removed."
+        log_info "$_funcname" "All temporary assets have been removed."
       else
-        log_warn "$_funcname" \
-          "Failed to remove the following temporary assets:"
+        log_warn "$_funcname" "Failed to remove the following temporary assets:"
 
         if [ -n "$_invalid_assets_list" ]; then
           printf '%s\n' '    - Invalid assets (not a file or directory):'
@@ -2284,16 +2282,14 @@ trap_cleanup() {
 
         if [ -n "$_rm_failed_list" ]; then
           printf '%s\n' "    - Failed to remove:"
-          for i in $_invalid_assets_list; do
-            printf '%s\n' "    - $i"
+          for i in $_rm_failed_list; do
+            printf '%s\n' "        - $i"
           done
         fi
       fi
     fi
   fi
 
-  #[ $_is_asset_cleanup_by_path = false ] &&
-  #  exit || return 0
   return 0
 }
 
