@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# SPDX-License-Identifier: MIT OR Apache-2.0
+#
 # letsgolang.sh - A robust, POSIX-compliant Go language installer.
 #
 # This script automates the process of downloading, verifying, and performing a
@@ -66,6 +68,28 @@ Options:
           Print help
   -V, --version
           Print version
+  --license
+          Print license information
+EOF
+
+  return 0
+}
+
+# show_license: Displays dual-license information to stdout.
+# Returns: 0 always.
+show_license() {
+  cat <<EOF
+SPDX-License-Identifier: MIT OR Apache-2.0
+
+This software is dual-licensed under the MIT License and the Apache License,
+Version 2.0. You may choose either license to govern your use of this software.
+
+Full license texts are available at:
+  • MIT:    https://opensource.org/licenses/MIT
+  • Apache: https://www.apache.org/licenses/LICENSE-2.0
+
+Source code:
+  https://github.com/jcsx/letsgolang
 EOF
 
   return 0
@@ -1519,6 +1543,10 @@ get_main_opts() {
         ;;
       --help)
         usage
+        exit 0
+        ;;
+      --license)
+        show_license
         exit 0
         ;;
       --quiet)

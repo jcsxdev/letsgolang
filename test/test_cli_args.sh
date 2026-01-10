@@ -33,6 +33,13 @@ test_version_long() {
   run_target --version >/dev/null
 }
 
+test_license_arg() {
+  local _output
+  _output=$(run_target --license)
+  _assert_contains "$_output" "SPDX-License-Identifier: MIT OR Apache-2.0" "License output should contain SPDX identifier."
+  _assert_contains "$_output" "MIT License and the Apache License" "License output should mention both licenses."
+}
+
 test_invalid_option() {
   local _output
   if _output=$(run_target --invalid-option 2>&1); then
