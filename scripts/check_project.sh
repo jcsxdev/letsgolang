@@ -165,7 +165,7 @@ main() {
   if [ "$_exit_status" -eq 0 ]; then
     log_success "$_funcname" "Project integrity verified successfully."
   else
-    log_error "$_funcname" "Project integrity checks failed. Run 'make bump-version' to fix metadata."
+    log_error "$_funcname" "Project integrity checks failed. Run 'just bump-version' to fix metadata."
   fi
 
   return $_exit_status

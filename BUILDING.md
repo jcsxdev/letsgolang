@@ -10,7 +10,7 @@ To use or develop `letsgolang`, you need a POSIX-compliant system with the follo
 - **curl**: For downloading the Go distributions.
 - **tar**: For extracting the Go distributions.
 - **git**: Required for version synchronization and development.
-- **make**: For task automation.
+- **just**: For task automation.
 
 ## Usage
 
@@ -28,20 +28,20 @@ For a list of supported options:
 
 ## Development Tasks
 
-The project uses a `Makefile` to manage common development tasks.
+The project uses a `justfile` to manage common development tasks.
 
 ### Running Tests
 
 Execute the full test suite:
 
 ```sh
-make test
+just test
 ```
 
 To run a specific test or filter tests by pattern:
 
 ```sh
-make test-filter name=pattern
+just test-filter pattern
 ```
 
 ### Project Verification
@@ -49,7 +49,7 @@ make test-filter name=pattern
 Before releasing or committing changes, you can verify the integrity of the project (ensuring version constants are populated and synchronized with Git):
 
 ```sh
-make check
+just check
 ```
 
 ### Versioning
@@ -57,7 +57,7 @@ make check
 The project automates metadata synchronization using Git state. To update the hardcoded version, commit hash, and date in the source code based on the latest Git tag:
 
 ```sh
-make bump-version
+just bump-version
 ```
 
 If no tags are found, it defaults to `0.0.0`.

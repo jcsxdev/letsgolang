@@ -3,10 +3,10 @@
 # GitHub Actions workflow for Version Alignment verification.
 #
 # This workflow ensures that the hardcoded version constant within the source
-# code (G_SCRIPT_VERSION) is perfectly synchronized with the latest metadata 
+# code (G_SCRIPT_VERSION) is perfectly synchronized with the latest metadata
 # from the Git repository (tags or short hashes).
 #
-# This check acts as a release gate to prevent deploying scripts with 
+# This check acts as a release gate to prevent deploying scripts with
 # inconsistent or outdated version information.
 #
 name: Version Alignment Check
@@ -24,7 +24,7 @@ jobs:
   check-version-alignment:
     name: Check Version Alignment
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
@@ -36,6 +36,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+        with:
+          just-version: "1.46.0"
+
       - name: Run Project Integrity Checks
         run: |
-          make check
+          just check

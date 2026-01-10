@@ -15,7 +15,7 @@ Thank you for your interest in improving `letsgolang`. We value POSIX compliance
 ## Development Workflow
 
 1. **Tests**: Ensure that any new functionality or bug fix is accompanied by corresponding unit tests in the `test/` directory.
-2. **Verification**: Run `make test` and `make check` before submitting any changes.
+2. **Verification**: Run `just test` and `just check` before submitting any changes.
 3. **Commit Messages**: We follow [Conventional Commits](https://www.conventionalcommits.org/).
    - `feat:` for new features.
    - `fix:` for bug fixes.
