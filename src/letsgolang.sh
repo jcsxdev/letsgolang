@@ -111,6 +111,9 @@ main() {
   trap '{ set_trap abort; }' TERM INT
   trap '{ set_trap cleanup; }' EXIT
 
+  # Verify system requirements
+  check_system_requirements
+
   get_main_opts "$@" || return 1
 
   # Auto-detect TTY: If not running in an interactive terminal,
@@ -348,11 +351,15 @@ is_go_command_found() {
 }
 
 # is_no_color: Checks if colored output should be disabled based on environment variables.
-# Respects the NO_COLOR standard (https://no-color.org/).
+# Respects the NO_COLOR standard (https://no-color.org/) and non-interactive terminals.
 # Returns: 0 if no-color is active, 1 otherwise.
 is_no_color() {
   if [ -n "${NO_COLOR:-}" ] \
     && [ "${NO_COLOR:-}" = true ] || [ "${NO_COLOR:-}" = '1' ]; then
+    return 0
+  fi
+
+  if [ ! -t 1 ]; then
     return 0
   fi
 
@@ -2201,13 +2208,40 @@ set_trap() {
 # Run Functions
 ######################################################################
 
-# run_curl: Wrapper for the curl command with security-first defaults.
-# Arguments: Arguments passed to curl.
-# Returns: Exit status of the curl command.
-run_curl() {
-  curl --fail --proto '=https' '--tlsv1.2' "$@"
-  return $?
+# check_system_requirements: Validates that the runtime environment meets all dependencies.
+# Checks for the presence of mandatory system utilities required for execution.
+# Returns: 0 if all requirements are met, 1 otherwise.
+check_system_requirements() {
+  local _funcname='check_system_requirements'
+
+  # List of mandatory POSIX and GNU utilities
+  require_command curl
+  require_command tar
+  require_command ls
+  require_command uname
+  require_command grep
+  require_command sed
+  require_command awk
+  require_command tr
+  require_command head
+  require_command tail
+  require_command cut
+  require_command wc
 }
+
+# require_command: Ensures that a required command exists in the system.
+# Arguments: <command_name>
+# Behavior: Exits with status 1 if the command is not found; otherwise continues normally.
+require_command() {
+  local _funcname='require_command'
+
+  if ! command -v "$1" >/dev/null 2>&1; then
+    log_error "$_funcname" "Required command '$1' not found."
+    exit 1
+  fi
+}
+
+# run_curl: Wrapper for the curl command with security-first defaults.
 
 ######################################################################
 # Trap Functions
