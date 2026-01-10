@@ -965,11 +965,11 @@ process_step6() {
 
     # Prepare the export lines for each shell
     _export_go_root_path="export GOROOT=\"$_go_root_path\""
-    _export_go_bin_path="export PATH=\"$_go_root_path/bin:\$PATH\""
+    _export_go_bin_path="export PATH=\"$_go_root_path/bin:\$HOME/go/bin:\$PATH\""
     _fish_export_go_root_path="set -gx GOROOT \"$_go_root_path\""
-    _fish_export_go_bin_path="set -gx PATH \"$_go_root_path/bin:\$PATH\""
+    _fish_export_go_bin_path="set -gx PATH \"$_go_root_path/bin:\$HOME/go/bin:\$PATH\""
     _nushell_export_go_root_path="let-env GOROOT = \"$_go_root_path\""
-    _nushell_export_go_bin_path="let-env PATH = \"$_go_root_path/bin:\$PATH\""
+    _nushell_export_go_bin_path="let-env PATH = \"$_go_root_path/bin:\$HOME/go/bin:\$PATH\""
   else
     log_error "$_funcname" \
       "Not a directory: '$_go_root_path'."
