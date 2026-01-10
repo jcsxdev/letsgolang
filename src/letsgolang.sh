@@ -70,6 +70,14 @@ Options:
           Print version
   --license
           Print license information
+
+Discussion:
+    letsgolang installs the Go programming language from the official
+    distribution channels without requiring root access. It aims to be
+    a simple, portable, POSIX-compliant installer suitable for any Unix
+    environment.
+
+    If you are new to Go, visit https://go.dev/doc/ to get started.
 EOF
 
   return 0
