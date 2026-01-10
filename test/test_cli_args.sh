@@ -67,7 +67,7 @@ test_uninstall_arg() {
   local _output
   # Input 'yes' is provided, though the prompt is currently bypassed in tests
   # as stdin/stdout are not attached to a TTY.
-  _output=$(HOME="$_temp_home" echo "yes" | run_target --uninstall 2>&1)
+  _output=$(echo "yes" | HOME="$_temp_home" run_target --uninstall 2>&1)
 
   _assert_contains "$_output" "Starting uninstallation..." "Should start uninstall routine."
 
