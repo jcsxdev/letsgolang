@@ -23,6 +23,7 @@
 - [Uninstallation](#uninstallation)
 - [Installation Details](#installation-details)
 - [Security Model](#security-model)
+- [Optional: Certificate Pinning](#optional-certificate-pinning)
 - [Design Goals](#design-goals)
 - [Non-Goals](#non-goals)
 - [Requirements](#requirements)
@@ -71,6 +72,7 @@ More info: <https://curl.se/docs/manpage.html>
 [curl-silent]: https://curl.se/docs/manpage.html#--silent
 [curl-fail]: https://curl.se/docs/manpage.html#--fail
 [curl-location]: https://curl.se/docs/manpage.html#--location
+[curl-pinnedpubkey]: https://curl.se/docs/manpage.html#--pinnedpubkey
 
 ### Verify installer signature (optional)
 
@@ -143,17 +145,17 @@ For automation or CI environments, use the `--assume-yes` flag to skip prompts:
 
 The installer supports the following flags:
 
-| Option               | Description                                             |
-| :------------------- | :------------------------------------------------------ |
-| `-u, --uninstall`    | Uninstall Go (removes binary and environment config)    |
-| `-v, --verbose`      | Enable verbose mode for detailed logging                |
-| `-q, --quiet`        | Enable quiet mode (suppress non-essential output)       |
-| `-y, --assume-yes`   | Run in non-interactive mode (auto-confirm prompts)      |
-| `--pinned-cert`      | Use a user‑supplied PEM certificate for TLS pinning     |
-| `--cert-fingerprint` | Use a user‑supplied SHA‑256 fingerprint for TLS pinning |
-| `-h, --help`         | Print help message                                      |
-| `-V, --version`      | Print installer version                                 |
-| `--license`          | Print license information                               |
+| Option                        | Description                                             |
+| :---------------------------- | :------------------------------------------------------ |
+| `-u, --uninstall`             | Uninstall Go (removes binary and environment config)    |
+| `-v, --verbose`               | Enable verbose mode for detailed logging                |
+| `-q, --quiet`                 | Enable quiet mode (suppress non-essential output)       |
+| `-y, --assume-yes`            | Run in non-interactive mode (auto-confirm prompts)      |
+| `--pinned-cert <path>`        | Use a user‑supplied PEM certificate for TLS pinning     |
+| `--cert-fingerprint <sha256>` | Use a user‑supplied SHA‑256 fingerprint for TLS pinning |
+| `-h, --help`                  | Print help message                                      |
+| `-V, --version`               | Print installer version                                 |
+| `--license`                   | Print license information                               |
 
 ## Updating Go
 
@@ -250,17 +252,62 @@ This feature is **opt‑in** and intended for advanced users. It does **not** re
 Two pinning methods are available:
 
 - `--pinned-cert <path>`\
-  Validates that the TLS certificate presented by `go.dev` matches the user‑supplied PEM file.
+  Validates the TLS certificate chain using a user‑supplied PEM file (e.g., a custom CA bundle or specific root). Uses `curl --cacert`.
 
 - `--cert-fingerprint <sha256>`\
-  Validates that the SHA‑256 fingerprint of the server certificate matches the user‑supplied value.\
-  **Note:** Uses curl’s `--pinnedpubkey` and expects values in the `sha256//<base64>` format.
+  Validates that the server’s public key matches the provided fingerprint. Uses `curl --pinnedpubkey`.\
+  **Note:** Requires the format `sha256//<base64>`. See [[docs][curl-pinnedpubkey]] for details.
 
-Example usage:
+### Advanced: Extracting Certificate Data for Pinning
 
-```sh
-./letsgolang.sh --cert-fingerprint "sha256//<base64_hash>"
+To use pinning effectively, you must first extract the valid certificate data from `go.dev`.
+
+#### 1. Extracting the Public Key Fingerprint
+
+To get the `sha256//<base64>` hash expected by `--cert-fingerprint`, run:
+
+```bash
+# Extract and format the fingerprint
+HASH=$(openssl s_client -connect go.dev:443 -servername go.dev </dev/null 2>/dev/null \
+| openssl x509 -pubkey -noout \
+| openssl pkey -pubin -outform der \
+| openssl dgst -sha256 -binary \
+| openssl enc -base64)
+
+echo "Fingerprint: sha256//$HASH"
 ```
+
+**Usage:**
+
+```bash
+# Successful run (matches)
+./letsgolang.sh --cert-fingerprint "sha256//$HASH"
+
+# Failing run (mismatch test)
+./letsgolang.sh --cert-fingerprint "sha256//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+```
+
+#### 2. Extracting the Certificate Chain
+
+To get the PEM file for `--pinned-cert`, download the chain presented by the server:
+
+```bash
+openssl s_client -connect go.dev:443 -servername go.dev -showcerts </dev/null 2>/dev/null \
+| sed -n '/^-*BEGIN CERTIFICATE-*$/,/^-*END CERTIFICATE-*$/p' \
+> go-dev-chain.pem
+```
+
+**Usage:**
+
+```bash
+./letsgolang.sh --pinned-cert ./go-dev-chain.pem
+```
+
+### Security Note
+
+> **⚠️ WARNING!**
+>
+> Certificate extraction must be performed on a **trusted network**. If you extract certificates while under a Man-in-the-Middle (MITM) attack, you will pin the attacker’s certificate, rendering the protection useless. Always verify the extracted data via a secondary channel if possible.
 
 ## Design Goals
 
