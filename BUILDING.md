@@ -4,9 +4,9 @@ This document provides instructions on how to set up the development environment
 
 ## Prerequisites
 
-To use or develop `letsgolang`, you need a POSIX-compliant system with the following tools installed:
+To use or develop `letsgolang`, you need a POSIX-oriented system with the following tools installed:
 
-- **POSIX Shell** (sh, dash, bash, etc.)
+- **Standard Shell** (`/bin/sh`, dash, bash, etc.)
 - **curl**: For downloading the Go distributions.
 - **tar**: For extracting the Go distributions.
 - **git**: Required for version synchronization and development.
@@ -58,7 +58,7 @@ If formatting issues are detected, you can automatically fix them:
 just fix
 ```
 
-*Note: `just fix` only modifies formatting; it does not change logic or behavior.*
+_Note: `just fix` only modifies formatting; it does not change logic or behavior._
 
 ### Versioning
 
