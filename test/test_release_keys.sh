@@ -152,6 +152,7 @@ test_resolve_sign_key_fail_gpg_keyring_missing() {
   # Mock gpg to fail list-keys.
   # Note: gpg_wrapper calls gpg.
   # We need to make the underlying gpg mock fail.
+  # shellcheck disable=SC2317
   gpg() { return 1; }
 
   (resolve_sign_key >/dev/null 2>&1) || _ret=$?
