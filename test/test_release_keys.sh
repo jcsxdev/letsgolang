@@ -37,13 +37,13 @@ gpg() {
 ######################################################################
 
 test_validate_sign_key_valid_long_id() {
-  # 16 hex characters
+  # 16 hex characters (FAKE TEST VALUE)
   validate_sign_key "1234567890ABCDEF"
   _assert_equals "0" "$?" "Should accept valid 16-char hex ID"
 }
 
 test_validate_sign_key_valid_fingerprint() {
-  # 40 hex characters
+  # 40 hex characters (FAKE TEST VALUE)
   validate_sign_key "1234567890ABCDEF1234567890ABCDEF12345678"
   _assert_equals "0" "$?" "Should accept valid 40-char hex fingerprint"
 }
@@ -83,6 +83,7 @@ test_validate_sign_key_invalid_length() {
 ######################################################################
 
 test_resolve_sign_key_explicit_argument() {
+  # FAKE TEST KEY
   SIGN_KEY="1234567890ABCDEF"
 
   # Mock gpg_wrapper to verify validation logic (bypass real execution)
@@ -97,7 +98,7 @@ test_resolve_sign_key_explicit_argument() {
 test_resolve_sign_key_git_local_config() {
   SIGN_KEY=""
 
-  # Mock git to return a key for local config
+  # Mock git to return a key for local config (FAKE)
   git() {
     if [ "$1" = "config" ] && [ "$2" = "--local" ]; then
       echo "AAAAABBBBBCCCCCD"
@@ -114,7 +115,7 @@ test_resolve_sign_key_git_local_config() {
 test_resolve_sign_key_git_global_fallback() {
   SIGN_KEY=""
 
-  # Mock git: fail local, succeed global
+  # Mock git: fail local, succeed global (FAKE)
   git() {
     if [ "$1" = "config" ] && [ "$2" = "--local" ]; then
       return 1
@@ -143,6 +144,8 @@ test_resolve_sign_key_fail_missing_key() {
 }
 
 test_resolve_sign_key_fail_gpg_keyring_missing() {
+  # FAKE TEST KEY — safe to expose
+  # gitleaks:allow
   SIGN_KEY="1234567890ABCDEF"
   local _ret=0
 
