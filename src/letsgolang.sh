@@ -2242,6 +2242,12 @@ require_command() {
 }
 
 # run_curl: Wrapper for the curl command with security-first defaults.
+# Arguments: Arguments passed to curl.
+# Returns: Exit status of the curl command.
+run_curl() {
+  curl --fail --proto '=https' '--tlsv1.2' "$@"
+  return $?
+}
 
 ######################################################################
 # Trap Functions
