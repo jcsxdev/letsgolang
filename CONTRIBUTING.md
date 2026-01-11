@@ -14,9 +14,11 @@ Thank you for your interest in improving `letsgolang`. We value POSIX compliance
 
 ## Development Workflow
 
-1. **Tests**: Ensure that any new functionality or bug fix is accompanied by corresponding unit tests in the `test/` directory.
-2. **Verification**: Run `just test` and `just check` before submitting any changes.
-3. **Commit Messages**: We follow [Conventional Commits](https://www.conventionalcommits.org/).
+1. **Prerequisites**: Ensure you have `just` installed, as it orchestrates our test and build commands.
+2. **Tests**: Ensure that any new functionality or bug fix is accompanied by corresponding unit tests in the `test/` directory.
+3. **Verification**: Run `just test` and `just check` before submitting any changes. If `just check` reports formatting issues, run `just fix` to automatically resolve them.
+4. **Documentation**: If you change the script's behavior or arguments, please update `README.md` and `BUILDING.md` to prevent documentation drift.
+5. **Commit Messages**: We follow [Conventional Commits](https://www.conventionalcommits.org/).
    - `feat:` for new features.
    - `fix:` for bug fixes.
    - `docs:` for documentation changes.

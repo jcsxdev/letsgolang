@@ -20,6 +20,15 @@ A minimalist and POSIX-compliant non-root installer for the Go programming langu
 - **Auditable**: Written in pure POSIX shell. No opaque binaries or hidden dependencies to trust.
 - **Reliable**: Enforces SHA256 checksum verification and handles environment configuration automatically.
 
+## Requirements
+
+To run the installer, your system needs standard POSIX tools:
+
+- A POSIX-compliant shell (`/bin/sh`)
+- `curl` or `wget` (for downloading)
+- `tar` (for extraction)
+- `sha256sum` or `shasum` (for verification)
+
 ## Quick Start
 
 1. Clone this repository:
@@ -35,36 +44,37 @@ cd letsgolang
 ./src/letsgolang.sh
 ```
 
-**Example Output:**
+### Non-interactive Usage
 
-```text
-[INFO] STEP 1/6:
-[INFO] Getting the current version from 'https://go.dev/VERSION?m=text'...
-[INFO] Current version found: 1.25.5.
-[INFO] STEP 2/6:
-[INFO] Searching for installation...
-[INFO] No installation found.
-[INFO] STEP 3/6:
-[INFO] Downloading the installation file from 'https://go.dev/dl/go1.25.5.linux-amd64.tar.gz'...
-##################################################################################################################################################################### 100.0%
-[INFO] STEP 4/6:
-[INFO] Validating the 'go1.25.5.linux-amd64.tar.gz' file...
-[INFO] Getting checksums of downloaded files...
-[INFO] File checksums:
-  - SHA256SUM: 9e9b755d63b36acf30c12a9a3fc379243714c1c6d3dd72861da637f336ebb35b
-  - SHA512SUM: b23f749a51b6da1bf7042a87af6daca2454604c69c62044627b411769f207ac5676fb629948a26c16000c3b495bf785902c3250a6db4522f60dbf4ad900064a8
-[INFO] Finding checksums on 'https://go.dev/dl'...
-[INFO] 1 checksum found:
-  - SHA256SUM: 9e9b755d63b36acf30c12a9a3fc379243714c1c6d3dd72861da637f336ebb35b
-[INFO] STEP 5/6:
-[INFO] Extracting 'go1.25.5.linux-amd64.tar.gz' file to '/home/user/.local/opt/go'...
-[INFO] STEP 6/6:
-[INFO] Configuring environment variables in /home/user/.bashrc...
-[INFO] Done.
+For automation or CI environments, use the `--assume-yes` flag to skip prompts:
 
-To apply the changes to your current shell session, run:
-  . $HOME/.bashrc
+```sh
+./src/letsgolang.sh --assume-yes
 ```
+
+## CLI Options
+
+The installer supports the following flags:
+
+| Option | Description |
+| :--- | :--- |
+| `-u, --uninstall` | Uninstall Go (removes binary and environment config) |
+| `-v, --verbose` | Enable verbose mode for detailed logging |
+| `-q, --quiet` | Enable quiet mode (suppress non-essential output) |
+| `-y, --assume-yes` | Run in non-interactive mode (auto-confirm prompts) |
+| `-h, --help` | Print help message |
+| `-V, --version` | Print installer version |
+| `--license` | Print license information |
+
+## Installation Details
+
+- **Location**: Go is installed into `$HOME/.local/opt/go`.
+- **Symlinks**: The installer manages `GOROOT` and `PATH` settings.
+- **Shell Config**: It automatically updates your shell profile (e.g., `.bashrc`, `.zshrc`, `config.fish`, or `.profile`) to include:
+  ```sh
+  export GOROOT="$HOME/.local/opt/go"
+  export PATH="$GOROOT/bin:$HOME/go/bin:$PATH"
+  ```
 
 ## Uninstallation
 
@@ -77,6 +87,15 @@ To uninstall Go, run the script with the `--uninstall` (or `-u`) flag:
 This command will:
 1. Remove the Go installation directory (`$HOME/.local/opt/go`).
 2. Check your shell configuration file for Go-related environment variables and advise you if manual cleanup is needed.
+
+## Troubleshooting
+
+- **Command not found**: If `go` is not found after installation, try reloading your shell configuration:
+  ```sh
+  source ~/.bashrc  # or ~/.zshrc, ~/.profile, etc.
+  ```
+- **Permission denied**: Ensure the script is executable (`chmod +x src/letsgolang.sh`).
+- **Checksum mismatch**: This indicates a corrupted download or a security issue. The installer will abort automatically to protect your system.
 
 ## Documentation
 

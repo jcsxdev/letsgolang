@@ -52,6 +52,14 @@ Before releasing or committing changes, you can verify the integrity of the proj
 just check
 ```
 
+If formatting issues are detected, you can automatically fix them:
+
+```sh
+just fix
+```
+
+*Note: `just fix` only modifies formatting; it does not change logic or behavior.*
+
 ### Versioning
 
 The project automates metadata synchronization using Git state. To update the hardcoded version, commit hash, and date in the source code based on the latest Git tag:
@@ -61,3 +69,29 @@ just bump-version
 ```
 
 If no tags are found, it defaults to `0.0.0`.
+
+### Building Releases
+
+To generate distribution artifacts (tarball, checksums, and installer):
+
+```sh
+just release [args]
+```
+
+Artifacts will be stored in the `dist/` directory.
+
+**Available arguments:**
+
+- `--release <tag>`: Use an explicit version tag instead of Git detection.
+- `--stripped`: Remove the leading 'v' from the version string.
+- `--sign`: Enable GPG signing for all generated artifacts.
+- `--sign-key <ID>`: Specify a GPG key ID (Long ID or Fingerprint).
+- `--sign-batch`: Enable non-interactive signing mode.
+
+### Cleaning
+
+To remove build artifacts and temporary files:
+
+```sh
+just clean
+```
