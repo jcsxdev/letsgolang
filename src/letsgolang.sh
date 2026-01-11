@@ -30,6 +30,8 @@ g_need_tty=yes      # Whether a TTY is available for interactive prompts
 g_quiet_mode=no     # If yes, suppress non-essential output
 g_uninstall_mode=no # If yes, run the uninstallation routine
 g_verbose_mode=no   # If yes, provide detailed execution logs
+g_pinned_cert=      # User-supplied PEM certificate path for TLS pinning
+g_cert_fingerprint= # User-supplied SHA-256 fingerprint for TLS pinning
 # END SETTINGS BLOCK
 
 # GENERAL BLOCK
@@ -64,6 +66,10 @@ Options:
           Enable quiet mode (suppress non-essential output)
   -y, --assume-yes
           Run in non-interactive mode (assume yes to all prompts)
+  --pinned-cert <path>
+          Use a user-supplied PEM certificate for TLS pinning
+  --cert-fingerprint <sha256>
+          Use a user-supplied SHA-256 fingerprint for TLS pinning
   -h, --help
           Print help
   -V, --version
@@ -115,6 +121,8 @@ main() {
   check_system_requirements
 
   get_main_opts "$@" || return 1
+
+  validate_pinning_config || return 1
 
   # Auto-detect TTY: If not running in an interactive terminal,
   # force non-interactive mode to avoid errors with /dev/tty.
@@ -1548,13 +1556,80 @@ get_file_permission() {
   return 0
 }
 
+# validate_pinning_config: Validates certificate pinning arguments and environment capabilities.
+# Returns: 0 on success, 1 on error.
+validate_pinning_config() {
+  local _funcname='validate_pinning_config'
+
+  if [ -n "$g_pinned_cert" ]; then
+    if [ ! -f "$g_pinned_cert" ]; then
+      log_error "$_funcname" \
+        "Pinned certificate file not found: '$g_pinned_cert'."
+      return 1
+    fi
+    if [ ! -r "$g_pinned_cert" ]; then
+      log_error "$_funcname" \
+        "Pinned certificate file is not readable: '$g_pinned_cert'."
+      return 1
+    fi
+  fi
+
+  if [ -n "$g_cert_fingerprint" ]; then
+    case "$g_cert_fingerprint" in
+      sha256//*) ;;
+      *)
+        log_error "$_funcname" \
+          "Fingerprint '$g_cert_fingerprint' does not start with 'sha256//'."
+        log_error "$_funcname" \
+          "curl requires format: sha256//<base64_hash>"
+        return 1
+        ;;
+    esac
+
+    local _curl_ver_str
+    local _is_version_ok
+
+    _curl_ver_str=$(curl -V 2>/dev/null | head -n1 | cut -d ' ' -f2)
+
+    # Check if curl version >= 7.39.0
+    _is_version_ok=$(printf '%s\n' "$_curl_ver_str" | awk -F. '{ if ($1 > 7 || ($1 == 7 && $2 >= 39)) print "yes"; else print "no" }')
+
+    if [ "$_is_version_ok" = "no" ]; then
+      log_error "$_funcname" \
+        "curl version $_curl_ver_str is too old for --cert-fingerprint (needs 7.39.0+)."
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
 # get_main_opts: Parses command-line options and updates global settings.
 # Arguments: Command-line parameters.
 get_main_opts() {
-  for arg in "$@"; do
-    case "$arg" in
+  while [ $# -gt 0 ]; do
+    case "$1" in
       --assume-yes)
         g_need_tty=no
+        shift
+        ;;
+      --pinned-cert)
+        if [ -n "${2:-}" ]; then
+          g_pinned_cert="$2"
+          shift 2
+        else
+          printf "Error: --pinned-cert requires a non-empty argument.\n" >&2
+          return 1
+        fi
+        ;;
+      --cert-fingerprint)
+        if [ -n "${2:-}" ]; then
+          g_cert_fingerprint="$2"
+          shift 2
+        else
+          printf "Error: --cert-fingerprint requires a non-empty argument.\n" >&2
+          return 1
+        fi
         ;;
       --help)
         usage
@@ -1566,25 +1641,28 @@ get_main_opts() {
         ;;
       --quiet)
         g_quiet_mode=yes
+        shift
         ;;
       --remove | --uninstall)
         g_uninstall_mode=yes
+        shift
         ;;
       --verbose)
         g_verbose_mode=yes
+        shift
         ;;
       --version)
         get_script_version
         exit 0
         ;;
-      *)
+      --*)
+        printf "Error: Unknown option: %s\n" "$1" >&2
+        usage
+        return 1
+        ;;
+      -*)
         OPTIND=1
-        if [ "${arg%%--*}" = "" ]; then
-          printf "Error: Unknown option: %s\n" "$arg" >&2
-          usage
-          return 1
-        fi
-        while getopts :Vhquvy sub_arg "$arg"; do
+        while getopts :Vhquvy sub_arg "$1"; do
           case "$sub_arg" in
             V)
               get_script_version
@@ -1613,9 +1691,16 @@ get_main_opts() {
               ;;
           esac
         done
+        shift
+        ;;
+      *)
+        printf "Error: Unknown argument: %s\n" "$1" >&2
+        usage
+        return 1
         ;;
     esac
   done
+  return 0
 }
 
 # get_version_to_num_conversion: Converts a semver string to a comparable integer.
@@ -2245,7 +2330,15 @@ require_command() {
 # Arguments: Arguments passed to curl.
 # Returns: Exit status of the curl command.
 run_curl() {
-  curl --fail --proto '=https' '--tlsv1.2' "$@"
+  if [ -n "$g_pinned_cert" ] && [ -n "$g_cert_fingerprint" ]; then
+    curl --fail --proto '=https' '--tlsv1.2' --cacert "$g_pinned_cert" --pinnedpubkey "$g_cert_fingerprint" "$@"
+  elif [ -n "$g_pinned_cert" ]; then
+    curl --fail --proto '=https' '--tlsv1.2' --cacert "$g_pinned_cert" "$@"
+  elif [ -n "$g_cert_fingerprint" ]; then
+    curl --fail --proto '=https' '--tlsv1.2' --pinnedpubkey "$g_cert_fingerprint" "$@"
+  else
+    curl --fail --proto '=https' '--tlsv1.2' "$@"
+  fi
   return $?
 }
 

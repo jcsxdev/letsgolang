@@ -143,15 +143,17 @@ For automation or CI environments, use the `--assume-yes` flag to skip prompts:
 
 The installer supports the following flags:
 
-| Option             | Description                                          |
-| :----------------- | :--------------------------------------------------- |
-| `-u, --uninstall`  | Uninstall Go (removes binary and environment config) |
-| `-v, --verbose`    | Enable verbose mode for detailed logging             |
-| `-q, --quiet`      | Enable quiet mode (suppress non-essential output)    |
-| `-y, --assume-yes` | Run in non-interactive mode (auto-confirm prompts)   |
-| `-h, --help`       | Print help message                                   |
-| `-V, --version`    | Print installer version                              |
-| `--license`        | Print license information                            |
+| Option               | Description                                             |
+| :------------------- | :------------------------------------------------------ |
+| `-u, --uninstall`    | Uninstall Go (removes binary and environment config)    |
+| `-v, --verbose`      | Enable verbose mode for detailed logging                |
+| `-q, --quiet`        | Enable quiet mode (suppress non-essential output)       |
+| `-y, --assume-yes`   | Run in non-interactive mode (auto-confirm prompts)      |
+| `--pinned-cert`      | Use a user‑supplied PEM certificate for TLS pinning     |
+| `--cert-fingerprint` | Use a user‑supplied SHA‑256 fingerprint for TLS pinning |
+| `-h, --help`         | Print help message                                      |
+| `-V, --version`      | Print installer version                                 |
+| `--license`          | Print license information                               |
 
 ## Updating Go
 
@@ -239,6 +241,26 @@ However, the Go project does not document, support, or guarantee GPG signatures 
 - **Dedicated, authenticated metadata API**: All metadata is scraped from the HTML of the download page.
 
 `letsgolang` cannot provide cryptographic guarantees stronger than those offered by Go’s own distribution model. This is a limitation of Go’s current distribution model, not a design choice made by `letsgolang`. It focuses on enforcing HTTPS, verifying the downloaded file’s SHA‑256 against the official checksum, and failing fast when something doesn’t match expectations.
+
+## Optional: Certificate Pinning
+
+`letsgolang` supports optional TLS certificate pinning for users who want an additional layer of transport security.\
+This feature is **opt‑in** and intended for advanced users. It does **not** replace checksum verification and may break when upstream certificates rotate.
+
+Two pinning methods are available:
+
+- `--pinned-cert <path>`\
+  Validates that the TLS certificate presented by `go.dev` matches the user‑supplied PEM file.
+
+- `--cert-fingerprint <sha256>`\
+  Validates that the SHA‑256 fingerprint of the server certificate matches the user‑supplied value.\
+  **Note:** Uses curl’s `--pinnedpubkey` and expects values in the `sha256//<base64>` format.
+
+Example usage:
+
+```sh
+./letsgolang.sh --cert-fingerprint "sha256//<base64_hash>"
+```
 
 ## Design Goals
 
