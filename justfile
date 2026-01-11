@@ -15,6 +15,7 @@ help:
     @echo "  just bump-version         Sync version metadata"
     @echo "  just fix                  Apply automatic project fixes (formatting)"
     @echo "  just check                Run project integrity checks"
+    @echo "  just clean                Remove build artifacts"
     @echo "  just release [args]       Build release artifacts"
     @echo ""
     @echo "Release arguments:"
@@ -48,6 +49,16 @@ fix:
 # Perform project integrity and metadata synchronization checks
 check:
     ./scripts/check_project.sh
+
+# Remove build artifacts
+clean:
+    @if [ -d "dist" ]; then \
+        printf "Removing 'dist' directory... "; \
+        rm -rf dist; \
+        echo "Done."; \
+    else \
+        echo "Directory 'dist' not found. Nothing to clean."; \
+    fi
 
 # Build all release artifacts into ./dist
 release *args:

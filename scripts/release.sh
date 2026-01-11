@@ -126,7 +126,7 @@ build_tarball() {
   ROOT_DIR="letsgolang-${VERSION}"
   mkdir -p "$TMP_DIR/$ROOT_DIR"
 
-  for f in BUILDING.md CONTRIBUTING.md LICENSE.md README.md SECURITY.md; do
+  for f in BUILDING.md CONTRIBUTING.md LICENSE-APACHE LICENSE-MIT README.md SECURITY.md; do
     if [ -f "$f" ]; then
       cp "$f" "$TMP_DIR/$ROOT_DIR/"
     else
