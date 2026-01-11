@@ -15,17 +15,22 @@ if [ ! -f "src/letsgolang.sh" ]; then
   exit 1
 fi
 
+_OLD_SOURCED="${SOURCED_FOR_TESTING:-}"
+export SOURCED_FOR_TESTING=true
 # shellcheck disable=SC1091
-# shellcheck source=src/letsgolang.sh
 . "./src/letsgolang.sh"
+# Restore the previous state of SOURCED_FOR_TESTING
+if [ -z "$_OLD_SOURCED" ]; then
+  unset SOURCED_FOR_TESTING
+else
+  export SOURCED_FOR_TESTING="$_OLD_SOURCED"
+fi
 
 # Ensure the library provided the necessary function
 if ! command -v get_temporary_dir >/dev/null 2>&1; then
   echo "Error: function 'get_temporary_dir' is missing from src/letsgolang.sh" >&2
   exit 1
 fi
-
-export SOURCED_FOR_TESTING=true
 
 ######################################################################
 # Globals & Cleanup
@@ -125,7 +130,7 @@ build_tarball() {
     if [ -f "$f" ]; then
       cp "$f" "$TMP_DIR/$ROOT_DIR/"
     else
-      log_warning "$_funcname" "File not found, skipping: $f"
+      log_warn "$_funcname" "File not found, skipping: $f"
     fi
   done
 
@@ -227,7 +232,7 @@ sign_artifact() {
   fi
 
   if [ ! -f "$_file" ]; then
-    log_warning "$_funcname" "Artifact not found, cannot sign: $_file"
+    log_warn "$_funcname" "Artifact not found, cannot sign: $_file"
     return
   fi
 

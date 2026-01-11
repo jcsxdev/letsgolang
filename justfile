@@ -13,6 +13,7 @@ help:
     @echo "  just test                 Run all unit tests"
     @echo "  just test-filter <p>      Run tests matching pattern"
     @echo "  just bump-version         Sync version metadata"
+    @echo "  just fix                  Apply automatic project fixes (formatting)"
     @echo "  just check                Run project integrity checks"
     @echo "  just release [args]       Build release artifacts"
     @echo ""
@@ -39,6 +40,10 @@ bump-version:
         exit 1; \
     fi
     ./scripts/revision.sh {{ target_script }}
+
+# Apply automatic project fixes
+fix:
+    ./scripts/fix_project.sh
 
 # Perform project integrity and metadata synchronization checks
 check:

@@ -113,7 +113,7 @@ check_code_formatting() {
 
   # shellcheck disable=SC2086
   if ! shfmt -d -i 2 -ci -bn $_dirs; then
-    log_error "$_funcname" "Formatting issues detected. Run: shfmt -w -i 2 -ci -bn src/ scripts/ test/"
+    log_error "$_funcname" "Formatting issues detected. Run: just fix"
     return 1
   fi
 
@@ -165,7 +165,7 @@ main() {
   if [ "$_exit_status" -eq 0 ]; then
     log_success "$_funcname" "Project integrity verified successfully."
   else
-    log_error "$_funcname" "Project integrity checks failed. Run 'just bump-version' to fix metadata."
+    log_error "$_funcname" "Project integrity checks failed. Run 'just fix' or 'just bump-version' to resolve issues."
   fi
 
   return $_exit_status
