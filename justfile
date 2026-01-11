@@ -7,14 +7,28 @@ target_script := "src/letsgolang.sh"
 # Default recipe: verify project integrity
 default: check
 
+help:
+    @echo "Available commands:"
+    @echo ""
+    @echo "  just test                 Run all unit tests"
+    @echo "  just test-filter <p>      Run tests matching pattern"
+    @echo "  just bump-version         Sync version metadata"
+    @echo "  just check                Run project integrity checks"
+    @echo "  just release [args]       Build release artifacts"
+    @echo ""
+    @echo "Release arguments:"
+    @echo "  --release <tag>           Use explicit version"
+    @echo "  --stripped                Remove leading 'v'"
+    @echo "  --sign                    Sign artifacts"
+    @echo "  --sign-key <ID>           Use specific GPG key"
+    @echo "  --sign-batch              Non-interactive signing"
+
 # Run all unit tests
 test:
     @echo "Running tests..."
     ./scripts/run_tests.sh
 
 # Run tests matching a specific name or pattern
-
-# Usage: just test-filter <pattern>
 test-filter pattern:
     ./scripts/run_tests.sh --filter {{ pattern }}
 
@@ -29,3 +43,7 @@ bump-version:
 # Perform project integrity and metadata synchronization checks
 check:
     ./scripts/check_project.sh
+
+# Build all release artifacts into ./dist
+release *args:
+    ./scripts/release.sh {{ args }}
