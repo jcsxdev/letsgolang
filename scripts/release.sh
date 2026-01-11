@@ -71,9 +71,10 @@ detect_version() {
   if [ -n "${RELEASE_TAG:-}" ]; then
     VERSION="$RELEASE_TAG"
   else
-    VERSION="$(git describe --tags 2>/dev/null || true)"
+    # Extract version from the installer script itself
+    VERSION="$("$SRC_SCRIPT" --version | awk '{print $2}')"
     if [ -z "$VERSION" ]; then
-      log_error "$_funcname" "Unable to determine version via git describe --tags."
+      log_error "$_funcname" "Unable to extract version from $SRC_SCRIPT."
       exit 1
     fi
   fi
