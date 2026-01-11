@@ -114,6 +114,7 @@ test_simulate_fresh_install() {
   setup
 
   # Force architecture to match our checksum logic
+  # shellcheck disable=SC2317
   get_machine_architecture_tag() { echo "amd64"; }
 
   # Prevent real shell reload
