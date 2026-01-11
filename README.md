@@ -20,6 +20,22 @@ A minimalist and POSIX-compliant non-root installer for the Go programming langu
 - **Auditable**: Written in pure POSIX shell. No opaque binaries or hidden dependencies to trust.
 - **Reliable**: Enforces SHA256 checksum verification and handles environment configuration automatically.
 
+## Installation
+
+To install Go using `letsgolang`, run:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSLf https://github.com/jcsxdev/letsgolang/releases/latest/download/letsgolang.sh | sh
+```
+
+### Verify installer signature (optional)
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSLfO "https://github.com/jcsxdev/letsgolang/releases/latest/download/letsgolang.sh{,.asc}"
+gpg --keyserver hkps://keys.openpgp.org --recv-keys DD7C87C3FEACEFF03CD1B93D00073B0954092B26
+gpg --verify letsgolang.sh.asc
+```
+
 ## Security Model
 
 Go is distributed via HTTPS from `https://go.dev/dl/`. The Go project publishes **checksums (currently only SHA‑256)** on that page. There are **no official GPG signatures**, **no transparency log**, and **no independent authenticated checksum channel**.
