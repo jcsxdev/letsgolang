@@ -19,9 +19,9 @@ set -u
 
 # VERSION BLOCK (managed by scripts/revision.sh)
 # These constants are updated automatically during the release process.
-readonly G_SCRIPT_VERSION='0.3.0'
-readonly G_SCRIPT_COMMIT='ece3ff5'
-readonly G_SCRIPT_DATE='2026-01-11'
+readonly G_SCRIPT_VERSION='0.4.0'
+readonly G_SCRIPT_COMMIT='24e69ed'
+readonly G_SCRIPT_DATE='2026-01-16'
 # END VERSION BLOCK
 
 # SETTINGS BLOCK
