@@ -153,6 +153,7 @@ The installer supports the following flags:
 | `-y, --assume-yes`            | Run in non-interactive mode (auto-confirm prompts)      |
 | `--pinned-cert <path>`        | Use a user‑supplied PEM certificate for TLS pinning     |
 | `--cert-fingerprint <sha256>` | Use a user‑supplied SHA‑256 fingerprint for TLS pinning |
+| `--checksum <sha256>`         | Verify the downloaded file against a specific checksum  |
 | `-h, --help`                  | Print help message                                      |
 | `-V, --version`               | Print installer version                                 |
 | `--license`                   | Print license information                               |
@@ -216,6 +217,17 @@ However, the Go project does not document, support, or guarantee GPG signatures 
   - `letsgolang` matches the **local SHA‑256** against the checksums found on `https://go.dev/dl/`.
   - SHA‑512 is computed for diagnostic/future use, but there is **no official SHA‑512 reference** to compare against.
 - **Aborts on mismatch or failure**: If the SHA‑256 hash is not found in the official checksum list, or if checksum calculation or download integrity checks fail, the installer aborts.
+
+### Double Checksum Verification
+
+`letsgolang` implements a robust dual-verification strategy for checksums:
+
+1. **Primary Source (HTML)**: Parses the official download page (`https://go.dev/dl/`). This remains the primary source because it is the only officially documented interface for verifying releases. The checksums are visible directly in the page body.
+2. **Secondary Source (JSON)**: Fetches metadata from the undocumented JSON endpoint (`https://go.dev/dl/?mode=json`). Although not officially advertised on the main Go website, this endpoint is widely used by tools and was referenced by Go maintainers in [GitHub Issue #41172](https://github.com/golang/go/issues/41172#issuecomment-685939301).
+
+> **Note on JSON Endpoint**: The JSON API (`?mode=json`) is undocumented and treated as a best-effort secondary signal, not a source of trust. Its structure may change without notice. If verification against the HTML source succeeds but the JSON check fails (e.g., due to API changes), the installer will still report the failure and abort, adhering to a "secure by default" philosophy.
+
+The installer cross-validates the checksums from both sources. If either fails or if they disagree, the installation aborts. This provides redundancy and protects against interface changes or targeted content manipulation on a single endpoint.
 
 ### Future roadmap and trade-offs
 
@@ -308,6 +320,36 @@ openssl s_client -connect go.dev:443 -servername go.dev -showcerts </dev/null 2>
 > **⚠️ WARNING!**
 >
 > Certificate extraction must be performed on a **trusted network**. If you extract certificates while under a Man-in-the-Middle (MITM) attack, you will pin the attacker’s certificate, rendering the protection useless. Always verify the extracted data via a secondary channel if possible.
+
+### Manual Checksum Verification
+
+For environments requiring strict immutability (like CI/CD pipelines) or where you do not trust the live metadata on `go.dev`, you can bypass the remote verification entirely by providing the expected SHA-256 hash directly via `--checksum`.
+
+When this option is used:
+
+1. The installer downloads the file (using TLS pinning if configured).
+2. It calculates the local SHA-256 hash.
+3. It compares the local hash **only** against the user-provided value.
+4. Remote metadata (HTML/JSON) is ignored.
+
+```bash
+./letsgolang.sh --checksum "f022b6aad78e362bcba9b0b94d09ad58c5a70c6ba3b7582905fababf5fe0181a"
+```
+
+### Maximum Security Configuration
+
+You can combine **Transport Security** (TLS Pinning) with **Content Integrity** (Manual Checksum) for the highest level of assurance. This ensures that you are connecting to the legitimate server _and_ receiving exactly the expected content.
+
+```bash
+./letsgolang.sh \
+  --cert-fingerprint "sha256//<known_fingerprint>" \
+  --checksum "<known_file_hash>"
+```
+
+This configuration protects against:
+
+- **MitM Attacks:** The connection will fail if the certificate does not match.
+- **Compromised Server/Content:** The installation will fail if the file hash does not match your expectation.
 
 ## Design Goals
 

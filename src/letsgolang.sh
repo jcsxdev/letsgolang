@@ -32,6 +32,7 @@ g_uninstall_mode=no # If yes, run the uninstallation routine
 g_verbose_mode=no   # If yes, provide detailed execution logs
 g_pinned_cert=      # User-supplied PEM certificate path for TLS pinning
 g_cert_fingerprint= # User-supplied SHA-256 fingerprint for TLS pinning
+g_manual_checksum=  # User-supplied SHA-256 checksum for verification
 # END SETTINGS BLOCK
 
 # GENERAL BLOCK
@@ -70,6 +71,8 @@ Options:
           Use a user-supplied PEM certificate for TLS pinning
   --cert-fingerprint <sha256>
           Use a user-supplied SHA-256 fingerprint for TLS pinning
+  --checksum <sha256>
+          Verify the downloaded file against a specific checksum
   -h, --help
           Print help
   -V, --version
@@ -703,6 +706,20 @@ process_step4() {
   - SHA512SUM: ${_sha512sum}
 EOF
 
+  # If a manual checksum is provided, use it as the source of truth.
+  if [ -n "$g_manual_checksum" ]; then
+    log_info "$_funcname" "Remote checksum verification skipped (--checksum provided)."
+    log_info "$_funcname" "Verifying against user-provided checksum..."
+
+    if [ "$g_manual_checksum" = "$_sha256sum" ]; then
+      log_success "$_funcname" "User-provided checksum verification passed."
+      return 0
+    else
+      log_error "$_funcname" "Checksum mismatch! User-provided: $g_manual_checksum, Local: $_sha256sum"
+      return 1
+    fi
+  fi
+
   _status_message=
 
   if _status_message=$(get_download_server_url 2>&1); then
@@ -717,7 +734,7 @@ EOF
   fi
 
   log_info "$_funcname" \
-    "Finding checksums on '$_download_server_url'..."
+    "Verifying checksum against HTML source ('$_download_server_url')..."
 
   _status_message=
 
@@ -742,6 +759,20 @@ EOF
         || _is_sha512sum_found=true
     fi
   done
+
+  # JSON Verification Step
+  log_info "$_funcname" "Verifying checksum against JSON API..."
+  local _json_checksum=
+  if _json_checksum=$(get_remote_checksum_from_json --filename "$g_installation_filename" --version "$g_remote_version_str"); then
+    if [ "$_json_checksum" != "$_sha256sum" ]; then
+      log_error "$_funcname" "Checksum mismatch! JSON API reports: $_json_checksum, Local: $_sha256sum"
+      return 1
+    else
+      log_success "$_funcname" "JSON API verification passed."
+    fi
+  else
+    log_warn "$_funcname" "Could not verify against JSON API (release might not be in JSON yet or API unavailable)."
+  fi
 
   local _state=
 
@@ -1444,6 +1475,169 @@ get_download_server_url() {
   return $?
 }
 
+# get_json_checksum_url: Returns the URL for the JSON release metadata.
+# Output: URL string.
+# Returns: Exit status of printf.
+get_json_checksum_url() {
+  printf '%s\n' 'https://go.dev/dl/?mode=json'
+  return $?
+}
+
+# get_remote_checksum_from_json: Extracts the SHA-256 checksum for a file from the JSON API.
+# Arguments: --filename <filename> [--version <version>]
+# Output: The SHA-256 checksum string.
+# Returns: 0 on success, 1 on error (e.g., file not found in JSON).
+get_remote_checksum_from_json() {
+  local _funcname='get_remote_checksum_from_json'
+  local _usage="$_funcname --filename <filename> [--version <version>]"
+
+  local _curl_exit_status=
+  local _filename=
+  local _version=
+  local _io_tempfile=
+  local _json_url=
+  local _option=
+  local _remote_checksum=
+  local _status_message=
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --filename)
+        _filename="${2:-}"
+        shift
+        ;;
+      --version)
+        _version="${2:-}"
+        shift
+        ;;
+      *)
+        log_error "$_funcname" \
+          "Internal: invalid option ('$1'): usage: $_usage."
+        return 1
+        ;;
+    esac
+    shift
+  done
+
+  if [ -z "$_filename" ]; then
+    log_error "$_funcname" "Internal: empty filename: usage: $_usage."
+    return 1
+  fi
+
+  if _status_message=$(get_json_checksum_url 2>&1); then
+    _json_url="$_status_message"
+  else
+    log_error "$_funcname" "Internal: failed to get JSON URL."
+    return 1
+  fi
+
+  if _status_message=$(get_temporary_file 2>&1); then
+    _io_tempfile="$_status_message"
+  else
+    log_error "$_funcname" "Internal: failed to get temporary I/O file."
+    return 1
+  fi
+
+  run_curl --silent "$_json_url" >"$_io_tempfile" 2>&1
+  _curl_exit_status=$?
+
+  if [ "$_curl_exit_status" -ne 0 ]; then
+    [ -f "$_io_tempfile" ] && rm "$_io_tempfile"
+    return "$_curl_exit_status"
+  fi
+
+  log_warn "$_funcname" "Using undocumented JSON API. Verification is best-effort." >&2
+
+  # NOTE: The JSON API is undocumented and may change structure without notice.
+  # This parser is designed to be defensive:
+  # 1. It identifies release blocks by "version" (if provided).
+  # 2. It scans for the specific "filename" within the "files" array.
+  # 3. It extracts the associated "sha256" value.
+  # 4. It fails on ambiguity (multiple matches).
+  #
+  # Rationale: We use a complex pure-awk implementation to avoid external
+  # dependencies like 'jq'. While verbose, this ensures portability across
+  # minimal environments and robustness against whitespace/formatting changes
+  # or non-minified JSON.
+  _remote_checksum=$(awk -v target_v="$_version" -v target_f="$_filename" '
+    BEGIN { 
+      gsub(/[[:space:]]/, "", target_v)
+      gsub(/[[:space:]]/, "", target_f)
+    }
+    {
+      # Accumulate all lines and remove whitespace
+      gsub(/[[:space:]]/, "", $0)
+      full_json = full_json $0
+    }
+    END {
+      # Identify version block if specified
+      if (target_v != "") {
+        # Anchor to the start of the object: {"version":"v1"
+        v_tag = "{\"version\":\"" target_v "\""
+        n_rel = split(full_json, releases, v_tag)
+        for (r = 2; r <= n_rel; r++) {
+          # For each release matching the version, split into file objects
+          n_obj = split(releases[r], objects, "}")
+          for (o = 1; o <= n_obj; o++) {
+            # If we hit the next release (starts with {"version"), we stop
+            if (objects[o] ~ "^{\"version\":\"") break
+            
+            if (objects[o] ~ "\"filename\":\"" target_f "\"") {
+              if (match(objects[o], /"sha256":"[a-fA-F0-9]{64}"/)) {
+                hash = substr(objects[o], RSTART+10, 64)
+                matches++
+                result = hash
+              } else if (match(objects[o], /"sha256":"[^"]*"/)) {
+                # Handle non-64 chars for tests/mocks
+                hash = substr(objects[o], RSTART+10, RLENGTH-11)
+                matches++
+                result = hash
+              }
+            }
+          }
+        }
+      } else {
+        # No version specified, search all objects
+        n_obj = split(full_json, objects, "}")
+        for (o = 1; o <= n_obj; o++) {
+          if (objects[o] ~ "\"filename\":\"" target_f "\"") {
+            if (match(objects[o], /"sha256":"[a-fA-F0-9]{64}"/)) {
+              hash = substr(objects[o], RSTART+10, 64)
+              matches++
+              result = hash
+            } else if (match(objects[o], /"sha256":"[^"]*"/)) {
+              hash = substr(objects[o], RSTART+10, RLENGTH-11)
+              matches++
+              result = hash
+            }
+          }
+        }
+      }
+      
+      if (matches == 1) { print result; exit 0 }
+      if (matches > 1) { exit 2 }
+      exit 1
+    }
+  ' "$_io_tempfile")
+
+  local _awk_exit_status=$?
+  [ -f "$_io_tempfile" ] && rm "$_io_tempfile"
+
+  if [ "$_awk_exit_status" -eq 2 ]; then
+    log_error "$_funcname" "Multiple checksum matches found for '$_filename' in JSON response. Ambiguous."
+    return 1
+  elif [ "$_awk_exit_status" -ne 0 ]; then
+    return 1
+  fi
+
+  if [ -n "$_remote_checksum" ]; then
+    printf '%s\n' "$_remote_checksum"
+    return 0
+  else
+    return 1
+  fi
+}
+
 # get_execution_step: Manages the list of steps to be performed.
 # Arguments: --list | --list-length | --stepN-name
 # Output: Space-separated list of steps, the count, or a specific step name.
@@ -1601,6 +1795,14 @@ validate_pinning_config() {
     fi
   fi
 
+  if [ -n "$g_manual_checksum" ]; then
+    # Validate SHA-256 format (64 hex characters) using POSIX ERE
+    if ! printf '%s\n' "$g_manual_checksum" | grep -qE '^[a-fA-F0-9]{64}$'; then
+      log_error "$_funcname" "Invalid checksum format: must be exactly 64 hex characters."
+      return 1
+    fi
+  fi
+
   return 0
 }
 
@@ -1628,6 +1830,15 @@ get_main_opts() {
           shift 2
         else
           printf "Error: --cert-fingerprint requires a non-empty argument.\n" >&2
+          return 1
+        fi
+        ;;
+      --checksum)
+        if [ -n "${2:-}" ]; then
+          g_manual_checksum="$2"
+          shift 2
+        else
+          printf "Error: --checksum requires a non-empty argument.\n" >&2
           return 1
         fi
         ;;
